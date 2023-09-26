@@ -7,11 +7,9 @@
 <!-- ⚠️ **Zverejnené pre archívne účely — nekopírujte, nula by Vás mrzela. Za nič také nenesiem žiadnu zodpovednosť!** Všetky odovzdané projekty prechádzajú kontrolou plagiátorstva, pri ktorej sa porovnávajú aj s dávnejšie odovzdanými riešeniami. -->
 <br />
 
-Hodnotenie: ?? / ??<br />（?）
+Hodnotenie: ?? / 20<br />（?）
 
 Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/student.phtml?script_name=zadani_detail&apid=268266&zid=54264)
-
-Hodnotenie: ?? / 20<br />（?）
 
 ### TODO-List ###
 
