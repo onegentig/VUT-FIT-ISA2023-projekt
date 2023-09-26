@@ -1,7 +1,7 @@
 ###############################################################################
 #
-# IXX-Projekt Makefile
-# (edit this file to fit the project)
+# tftp-client & tftp-server Makefile
+# @author Onegen Something <xkrame00@vutbr.cz>
 #
 # Usage:
 #   - `make` or `make all` or `make release` to build the project
@@ -14,24 +14,14 @@
 #
 ###############################################################################
 
-TARGET                 = ixx-projekt
-ZIPNAME                = xlogin00.zip
+CLIENT_TARGET          = tftp-client
+SERVER_TARGET          = tftp-server
+ZIPNAME                = xkrame00.tar
 
-##### Example: C #####
-
-CC                     = gcc
-CFLAGS                 = -std=c99
-EXTRA_CFLAGS           = -Wall -Wextra -Werror -pedantic \
-                    -fdata-sections -ffunction-sections
-RELEASE_CFLAGS         = -DNDEBUG -O2 -march=native
-DEBUG_CFLAGS           = -g -Og -fsanitize=undefined
-LINT_FLAGS             = --format-style=file --fix \
-   -checks="bugprone-*,google-*,performance-*,readability-*"
-RM                     = rm -f
-
-SRCS                   = $(wildcard *.c)
-
-##### Example: C++ #####
+CLIENT_SRC             = src/client
+SERVER_SRC             = src/server
+OBJ_DIR                = obj
+BIN_DIR                = bin
 
 CPP                    = g++
 CPPFLAGS               = -std=c++20
@@ -43,15 +33,10 @@ LINT_FLAGS             = --format-style=file --fix \
     -checks="bugprone-*,google-*,performance-*,readability-*"
 RM                     = rm -f
 
-SRCS                   = $(wildcard *.cpp)
-
-##### Example: LaTeX #####
-
-LATEX                  = pdftex
-DVIPS                  = dvips -t a4
-PS2PDF                 = ps2pdf
-
-SRCS                   = $(wildcard *.tex)
+CLIENT_SRCS            = $(wildcard $(CLIENT_SRC)/*.cpp)
+SERVER_SRCS            = $(wildcard $(SERVER_SRC)/*.cpp)
+CLIENT_OBJS            = $(CLIENT_SRCS:.cpp=.o)
+SERVER_OBJS            = $(SERVER_SRCS:.cpp=.o)
 
 ###############################################################################
 
@@ -59,29 +44,25 @@ SRCS                   = $(wildcard *.tex)
 
 all: release
 
-release: EXTRA_CXFLAGS += ${RELEASE_CXFLAGS}
-release: ${TARGET}
+release: EXTRA_CPPFLAGS += ${RELEASE_CPPFLAGS}
+release: $(CLIENT_TARGET) $(SERVER_TARGET)
 
-debug: EXTRA_CXFLAGS += ${DEBUG_CXFLAGS}
-debug: ${TARGET}
+debug: EXTRA_CPPFLAGS += ${DEBUG_CPPFLAGS}
+debug: $(CLIENT_TARGET) $(SERVER_TARGET)
 
-${TARGET}: ${SRCS}
-	@##### C #####
-	${CC} ${CFLAGS} ${EXTRA_CFLAGS} ${SRCS} -o ${TARGET}
-	@#### C++ ####
-	${CPP} ${CPPFLAGS} ${EXTRA_CXFLAGS} ${SRCS} -o ${TARGET}
-	@### LaTeX ###
-	${LATEX} ${SRCS}
-	${LATEX} ${SRCS}
-	${DVIPS} ${SRCS}
-	${PS2PDF} ${SRCS}
-	@#############
-	@echo "projcpp compiled!"
-	@echo "Run with: ./projcpp -s omething"
+$(CLIENT_TARGET): $(CLIENT_OBJS)
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $^ -o $(BIN_DIR)/$@
+
+$(SERVER_TARGET): $(SERVER_OBJS)
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $^ -o $(BIN_DIR)/$@
+
+# generic rule for .cpp -> .o
+%.o: %.cpp
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) -c $< -o $@
 
 help:
-	@echo "IXX-Project (Template Makefile)"
-	@echo "@author Someone Amazing <xlogin00@vutbr.cz>"
+	@echo "tftp-client & tftp-server Makefile"
+	@echo "@author Onegen Something <xkrame00@vutbr.cz>"
 	@echo ""
 	@echo "Usage: make [TARGET]"
 	@echo "TARGETs:"
@@ -94,13 +75,15 @@ help:
 	@echo "  help    print this message"
 
 clean:
-	${RM} ${TARGET}
+	$(RM) $(CLIENT_OBJS) $(SERVER_OBJS)
+	$(RM) $(BIN_DIR)/$(CLIENT_TARGET) $(BIN_DIR)/$(SERVER_TARGET)
 
 zip:
-	zip -q -r ${ZIPNAME}.zip ${SRCS} Makefile
+	zip -q -r $(ZIPNAME) src include obj Makefile
 
 format:
 	clang-format -i *.cpp *.hpp
 
 lint:
-	clang-tidy ${SRCS} ${LINT_FLAGS} -- ${CFLAGS}
+	clang-tidy ${CLIENT_SRCS} ${LINT_FLAGS} -- ${CPPFLAGS} ${EXTRA_CPPFLAGS}
+	clang-tidy ${SERVER_SRCS} ${LINT_FLAGS} -- ${CPPFLAGS} ${EXTRA_CPPFLAGS}
