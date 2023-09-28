@@ -23,6 +23,7 @@ OBJ_DIR                = obj
 INCLUDE_DIR            = include
 CLIENT_SRC             = $(SRC_DIR)/client
 SERVER_SRC             = $(SRC_DIR)/server
+PACKET_SRC             = $(SRC_DIR)/packet
 
 CPP                    = g++
 CPPFLAGS               = -std=c++20 -I$(INCLUDE_DIR)
@@ -30,20 +31,24 @@ EXTRA_CPPFLAGS         = -Wall -Wextra -Werror -pedantic \
                     -fdata-sections -ffunction-sections
 RELEASE_CPPFLAGS       = -DNDEBUG -O2 -march=native
 DEBUG_CPPFLAGS         = -g -Og -fsanitize=undefined
-LINT_FLAGS             = --format-style=file --fix \
+LINT_FLAGS             = --format-style=file -fix-errors \
     -checks="bugprone-*,google-*,performance-*,readability-*"
 
 RM                     = rm -f
 
 ###############################################################################
 
-INCLUDES			   := $(wildcard $(INCLUDE_DIR)/*.hpp)
+INCLUDES			   := $(shell find include/ -type f -name '*.hpp')
 CLIENT_SRCS            := $(wildcard $(CLIENT_SRC)/*.cpp)
 SERVER_SRCS            := $(wildcard $(SERVER_SRC)/*.cpp)
+PACKET_SRCS            := $(wildcard $(PACKET_SRC)/*.cpp)
 
 CLIENT_OBJS            := $(CLIENT_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 SERVER_OBJS            := $(SERVER_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
-OBJS                   := $(CLIENT_OBJS) $(SERVER_OBJS)
+PACKET_OBJS            := $(PACKET_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+
+SRCS                   := $(CLIENT_SRCS) $(SERVER_SRCS) $(PACKET_SRCS) 
+OBJS                   := $(CLIENT_OBJS) $(SERVER_OBJS) $(PACKET_OBJS)
 
 ###############################################################################
 
@@ -96,7 +101,7 @@ tar: clean
 zip: tar
 
 format:
-	clang-format -i ${CLIENT_SRCS} ${SERVER_SRCS} ${INCLUDES}
+	clang-format -i $(INCLUDES) $(SRCS)
 	@echo "  Formatted!"
 
 lint:
