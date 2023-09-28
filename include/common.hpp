@@ -3,4 +3,18 @@
  * the standard library and some constants.
  */
 
+#ifndef COMMON_HPP
+#define COMMON_HPP
+
+#include <arpa/inet.h>
+#include <sys/types.h>
+
+#include <cstdint>
+#include <cstring>
 #include <iostream>
+#include <string>
+#include <vector>
+
+#include "const.hpp"
+
+#endif
