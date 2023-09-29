@@ -70,41 +70,18 @@ class BasePacket {
      /* === Debugging Methods === */
 
      /**
-      * @brief Prints the packet as an inline table
-      *        to the standard output. For debugging purposes.
-      * @return void
-      */
-     virtual void dprint() const = 0;
-
-     /**
-      * @brief Creates a hexdump string of a 2B numerical segment.
+      * @brief Returns a hexdump string of the packet.
       * @return std::string - hexdump string
       */
-     static inline std::string dprint2BNum(uint16_t num) {
-          std::ostringstream stream;
-          stream << std::hex << std::setw(2) << std::setfill('0')
-                 << static_cast<int>((num & 0xFF00) / 256) << " "
-                 << std::setw(2) << (num & 0x00FF);
-          return stream.str();
-     }
-
-     /**
-      * @brief Creates a hexdump string of a string segment
-      * @return std::string - hexdump string
-      */
-     static inline std::string dprintStr(std::string str) {
+     std::string hexdump() const {
           std::ostringstream stream;
 
-          if (str.size() <= MAX_DEBUG_STRING)
-               for (char c : str)
-                    stream << std::setw(2) << static_cast<int>(c) << " ";
-          return stream.str();
-
-          // TODO: Make this obey MAX_DEBUG_STRING
-          stream << std::setw(2) << static_cast<int>(str[0]) << " "
-                 << std::setw(2) << static_cast<int>(str[1]) << " .. "
-                 << std::setw(2) << static_cast<int>(str[str.size() - 2]) << " "
-                 << std::setw(2) << static_cast<int>(str[str.size() - 1]);
+          auto bin = toBinary();
+          for (size_t i = 0; i < bin.size(); ++i) {
+               stream << std::hex << std::setw(2) << std::setfill('0')
+                      << (int)bin[i] << " ";
+          }
+          std::cout << stream.str() << std::endl;
 
           return stream.str();
      }

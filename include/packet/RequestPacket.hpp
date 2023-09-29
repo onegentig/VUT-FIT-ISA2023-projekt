@@ -11,6 +11,14 @@
 #     include "packet/BasePacket.hpp"
 
 /**
+ * @brief TFTP request packet type.
+ */
+enum RequestPacketType {
+     Read = 0, /**< Read request */
+     Write = 1 /**< Write request */
+};
+
+/**
  * @brief TFTP request packet class.
  */
 class RequestPacket : public BasePacket {
@@ -23,11 +31,13 @@ class RequestPacket : public BasePacket {
 
      /**
       * @brief Constructs a new Request packet object.
+      * @param RequestPacketType - type
       * @param std::string - filename
       * @param std::string - mode
       * @return RequestPacket
       */
-     explicit RequestPacket(std::string filename, std::string mode);
+     explicit RequestPacket(RequestPacketType type, std::string filename,
+                            std::string mode);
 
      /* === Core Methods === */
 
@@ -72,14 +82,15 @@ class RequestPacket : public BasePacket {
       */
      void setMode(std::string mode) { this->mode = mode; }
 
-     /* === Debugging Methods === */
-
      /**
-      * @brief Prints the packet as an inline table
-      *        to the standard output. For debugging purposes.
+      * @brief Sets the type
+      * @param RequestPacketType - type
       * @return void
       */
-     void dprint() const override;
+     void setType(RequestPacketType type) {
+          this->opcode = type == RequestPacketType::Read ? TFTPOpcode::RRQ
+                                                         : TFTPOpcode::WRQ;
+     }
 
    private:
      std::string filename; /**< Filename */

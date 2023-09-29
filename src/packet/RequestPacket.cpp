@@ -13,9 +13,11 @@ RequestPacket::RequestPacket() : filename(""), mode("") {
      opcode = TFTPOpcode::RRQ;
 }
 
-RequestPacket::RequestPacket(std::string filename, std::string mode)
+RequestPacket::RequestPacket(RequestPacketType type, std::string filename,
+                             std::string mode)
     : filename(filename), mode(mode) {
-     opcode = TFTPOpcode::RRQ;
+     opcode
+         = type == RequestPacketType::Read ? TFTPOpcode::RRQ : TFTPOpcode::WRQ;
 }
 
 /* === Core Methods === */
@@ -57,17 +59,4 @@ void RequestPacket::fromBinary(const std::vector<char>& binaryData) {
      size_t offset = 2;
      offset = findcstr(binaryData, offset, filename);
      offset = findcstr(binaryData, offset, mode);
-}
-
-/* === Debugging Methods === */
-
-void RequestPacket::dprint() const {
-     auto opcodeStr = dprint2BNum(opcode);
-     auto fileStr = dprintStr(filename);
-     auto modeStr = dprintStr(mode);
-
-     std::cout << " -----------------------------\n"
-               << "|  " << opcodeStr << "  |  " << fileStr << " | " << modeStr
-               << " |\n"
-               << " -----------------------------\n";
 }

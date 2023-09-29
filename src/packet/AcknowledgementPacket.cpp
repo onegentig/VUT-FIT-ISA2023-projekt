@@ -54,14 +54,3 @@ void AcknowledgementPacket::fromBinary(const std::vector<char>& binaryData) {
      this->opcode = static_cast<TFTPOpcode>(opcode);
      this->blockN = blockN;
 }
-
-/* === Debugging Methods === */
-
-void AcknowledgementPacket::dprint() const {
-     auto opcodeStr = dprint2BNum(opcode);
-     auto blockStr = dprint2BNum(blockN);
-
-     std::cout << " -------------------\n"
-               << "|  " << opcodeStr << "  |  " << blockStr << " |\n"
-               << " -------------------\n";
-}
