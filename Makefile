@@ -62,13 +62,13 @@ release: $(CLIENT_TARGET) $(SERVER_TARGET)
 debug: EXTRA_CPPFLAGS += ${DEBUG_CPPFLAGS}
 debug: $(CLIENT_TARGET) $(SERVER_TARGET)
 
-$(CLIENT_TARGET): $(CLIENT_OBJS)
-	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CLIENT_OBJS) -o $(CLIENT_TARGET)
+$(CLIENT_TARGET): $(CLIENT_OBJS) $(PACKET_OBJS)
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CLIENT_OBJS) $(PACKET_OBJS) -o $(CLIENT_TARGET)
 	@echo "  tftp-client compiled!"
 	@echo "  Run with: ./tftp-client <-h hostname> [-p port] [-f path] <-t path>"
 
-$(SERVER_TARGET): $(SERVER_OBJS)
-	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(SERVER_OBJS) -o $(SERVER_TARGET)
+$(SERVER_TARGET): $(SERVER_OBJS) $(PACKET_OBJS)
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(SERVER_OBJS) $(PACKET_OBJS) -o $(SERVER_TARGET)
 	@echo "  tftp-server compiled!"
 	@echo "  Run with: ./tftp-server [-p port] <path>"
 

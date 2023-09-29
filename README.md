@@ -15,6 +15,11 @@ Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/st
 
 - [X] ⏰ 2023-09-05 **Zadanie**
 - [X] ⏰ 2023-09-06 **Registrácia**
+- [ ] Vytvoriť triedy pre packety
+- [ ] Vytvoriť základ pre triedy klienta a servera
+- [ ] Klientový spúšťač a testovanie
+- [ ] Serverový spúšťač a testovanie
+- [ ] Rozšírenia ...
 - [ ] ⏰ 2023-11-20 **Deadline**
 
 <!-- Môže-nemusí byť -->
