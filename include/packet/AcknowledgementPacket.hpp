@@ -60,15 +60,6 @@ class AcknowledgementPacket : public BasePacket {
       */
      void setBlockNumber(uint16_t blockN) { this->blockN = blockN; }
 
-     /* === Debugging Methods === */
-
-     /**
-      * @brief Prints the packet as an inline table
-      *        to the standard output. For debugging purposes.
-      * @return void
-      */
-     void dprint() const override;
-
    private:
      uint16_t blockN; /**< Two-byte block number. */
 };
