@@ -34,11 +34,16 @@ DEBUG_CPPFLAGS         = -g -Og -fsanitize=undefined
 LINT_FLAGS             = --format-style=file -fix-errors \
     -checks="bugprone-*,google-*,performance-*,readability-*"
 
+TEST_DIR               = test
+TEST_TARGET            = tests
+CATCH2_VERSION         = 3.4.0
+CATCH2_DIR             = $(TEST_DIR)/Catch2
+
 RM                     = rm -f
 
 ###############################################################################
 
-INCLUDES			   := $(shell find include/ -type f -name '*.hpp')
+INCLUDES               := $(shell find include/ -type f -name '*.hpp')
 CLIENT_SRCS            := $(wildcard $(CLIENT_SRC)/*.cpp)
 SERVER_SRCS            := $(wildcard $(SERVER_SRC)/*.cpp)
 PACKET_SRCS            := $(wildcard $(PACKET_SRC)/*.cpp)
@@ -47,14 +52,28 @@ CLIENT_OBJS            := $(CLIENT_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 SERVER_OBJS            := $(SERVER_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 PACKET_OBJS            := $(PACKET_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-SRCS                   := $(CLIENT_SRCS) $(SERVER_SRCS) $(PACKET_SRCS) 
+CATCH2_H_URL           := \
+	https://github.com/catchorg/Catch2/releases/download/v$(CATCH2_VERSION)/catch_amalgamated.hpp
+CATCH2_C_URL           := \
+	https://github.com/catchorg/Catch2/releases/download/v$(CATCH2_VERSION)/catch_amalgamated.cpp
+CATCH2_HEADER          := $(CATCH2_DIR)/catch_amalgamated.hpp
+CATCH2_SRC             := $(CATCH2_DIR)/catch_amalgamated.cpp
+CATCH2_OBJ             := $(OBJ_DIR)/test/catch_amalgamated.o
+TEST_SRCS              := $(wildcard $(TEST_DIR)/*.cpp)
+TEST_OBJS              := $(TEST_SRCS:$(TEST_DIR)/%.cpp=$(OBJ_DIR)/test/%.o)
+
+SRCS                   := $(CLIENT_SRCS) $(SERVER_SRCS) $(PACKET_SRCS) \
+	$(TEST_SRCS)
 OBJS                   := $(CLIENT_OBJS) $(SERVER_OBJS) $(PACKET_OBJS)
+CLASS_OBJS             := $(filter-out %main.o, $(OBJS))
 
 ###############################################################################
 
-.PHONY: all release debug help clean tar zip lint format
+.PHONY: all release debug help test clean tar zip lint format
 
 all: release
+
+##### Building primary targets #####
 
 release: EXTRA_CPPFLAGS += ${RELEASE_CPPFLAGS}
 release: $(CLIENT_TARGET) $(SERVER_TARGET)
@@ -75,6 +94,34 @@ $(SERVER_TARGET): $(SERVER_OBJS) $(PACKET_OBJS)
 $(OBJS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) -c $< -o $@
+
+##### Tests #####
+
+test: $(TEST_TARGET)
+	@echo "  Running tests..."
+	@echo ""
+	@./$(TEST_TARGET)
+
+$(TEST_TARGET): $(CATCH2_SRC) $(CATCH2_OBJ) $(TEST_OBJS) $(CLASS_OBJS)
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) -Itest/Catch2 $(TEST_OBJS) \
+		$(CLASS_OBJS) $(CATCH2_OBJ) -o $(TEST_TARGET)
+	@echo "  Tests compiled!"
+
+$(TEST_OBJS): $(OBJ_DIR)/test/%.o : $(TEST_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) -Itest/Catch2 -c $< -o $@
+
+$(CATCH2_OBJ): $(CATCH2_SRC)
+	@mkdir -p $(dir $@)
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) -Itest/Catch2 -c $(CATCH2_SRC) -o $(CATCH2_OBJ)
+
+$(CATCH2_SRC):
+	echo "  Catch2 framework not would. Downloading..."
+	mkdir -p $(CATCH2_DIR)
+	curl -L $(CATCH2_H_URL) -o $(CATCH2_SRC)
+	curl -L $(CATCH2_C_URL) -o $(CATCH2_HEADER)
+
+##### Other targets #####
 
 help:
 	@echo "tftp-client & tftp-server Makefile"
@@ -105,5 +152,4 @@ format:
 	@echo "  Formatted!"
 
 lint:
-	clang-tidy ${CLIENT_SRCS} ${LINT_FLAGS} -- ${CPPFLAGS} ${EXTRA_CPPFLAGS}
-	clang-tidy ${SERVER_SRCS} ${LINT_FLAGS} -- ${CPPFLAGS} ${EXTRA_CPPFLAGS}
+	clang-tidy $(SRCS) $(INCLUDES) $(LINT_FLAGS) -- $(CPPFLAGS) $(EXTRA_CPPFLAGS)
