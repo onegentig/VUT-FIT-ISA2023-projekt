@@ -45,3 +45,6 @@ temp**
 
 tftp-server
 tftp-client
+
+tests
+test/Catch2/**
