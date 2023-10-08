@@ -1,9 +1,13 @@
-#include "catch_amalgamated.hpp"
-#include "packet/AcknowledgementPacket.hpp"
+/**
+ * @file test/RequestPacket.cpp
+ * @author Filip J. Kramec <xkrame00@vutbr.cz>
+ * @brief RequestPacket (RRQ/WQR) unit tests
+ * @date 2023-10-07
+ */
+
 #include "packet/RequestPacket.hpp"
 
-/* === RRQ Packet === */
-// opcode: 01 02
+#include "catch_amalgamated.hpp"
 
 TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
      SECTION("Default constructor init") {
@@ -14,28 +18,31 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
      }
 
      SECTION("Parametrised constructor init") {
-          RequestPacket rp_read(RequestPacketType::Read, "test.txt", "octet");
+          RequestPacket rp_read(RequestPacketType::Read, "example.txt",
+                                "octet");
           REQUIRE(rp_read.getOpcode() == TFTPOpcode::RRQ);
-          REQUIRE(rp_read.getFilename() == "test.txt");
+          REQUIRE(rp_read.getFilename() == "example.txt");
           REQUIRE(rp_read.getMode() == "octet");
 
-          RequestPacket rp_write(RequestPacketType::Write, "test.txt", "octet");
+          RequestPacket rp_write(RequestPacketType::Write, "example.txt",
+                                 "octet");
           REQUIRE(rp_write.getOpcode() == TFTPOpcode::WRQ);
-          REQUIRE(rp_write.getFilename() == "test.txt");
+          REQUIRE(rp_write.getFilename() == "example.txt");
           REQUIRE(rp_write.getMode() == "octet");
+          REQUIRE(rp_read != rp_write);
 
-          RequestPacket rp_incomplete(RequestPacketType::Read, "test.txt", "");
+          RequestPacket rp_incomplete(RequestPacketType::Read, "example.txt",
+                                      "");
           REQUIRE(rp_incomplete.getOpcode() == TFTPOpcode::RRQ);
-          REQUIRE(rp_incomplete.getFilename() == "test.txt");
+          REQUIRE(rp_incomplete.getFilename() == "example.txt");
           REQUIRE(rp_incomplete.getMode() == "");
      }
 
-     // SECTION("Invalid parameters") {
-     //      RequestPacket rp;
-     //      REQUIRE_THROWS(rp.setMode("magic"));
-     //      REQUIRE_THROWS(RequestPacket(RequestPacketType::Read, "",
-     //      "magic"));
-     // }
+     SECTION("Invalid parameters") {
+          RequestPacket rp;
+          REQUIRE_THROWS(rp.setMode("magic"));
+          REQUIRE_THROWS(RequestPacket(RequestPacketType::Read, "", "magic"));
+     }
 
      SECTION("Setters and getters") {
           RequestPacket rp;
@@ -81,5 +88,12 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
           REQUIRE(rp2.getOpcode() == TFTPOpcode::RRQ);
           REQUIRE(rp2.getFilename() == filename);
           REQUIRE(rp2.getMode() == mode);
+          REQUIRE(rp == rp2);
+     }
+
+     SECTION("Empty serialisation") {
+          RequestPacket rp;
+          std::vector<char> binary = rp.toBinary();
+          REQUIRE(binary.size() == 0);
      }
 }
