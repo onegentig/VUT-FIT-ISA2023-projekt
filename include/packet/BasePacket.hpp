@@ -30,18 +30,27 @@ class BasePacket {
 
      /**
       * @brief Creates a packet from a binary representation.
-      * @param std::vector<char> - binary representation of the packet
+      * @param std::vector<char> binary representation of the packet
       * @return void
       */
      virtual void fromBinary(const std::vector<char>&) = 0;
+
+     /**
+      * @brief Compares and checks equality of two BasePacket objects.
+      * @param other BasePacket object
+      * @return true when equal, otherwise false
+      */
+     bool operator==(const BasePacket& other) const {
+          return this->opcode == other.opcode;
+     }
 
      /* === Helper Methods === */
 
      /**
       * @brief Searches for a null-terminated string in a binary data vector.
-      * @param std::vector<char> - binary data vector
-      * @param size_t - offset to start searching from
-      * @param std::string& - string to store the result in
+      * @param std::vector<char> binary data vector
+      * @param size_t offset to start searching from
+      * @param std::string& string to store the result in
       * @return size_t - position of the next character after the null
       * terminator
       */

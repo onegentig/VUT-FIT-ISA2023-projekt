@@ -16,6 +16,9 @@ RequestPacket::RequestPacket() : filename(""), mode("") {
 RequestPacket::RequestPacket(RequestPacketType type, std::string filename,
                              std::string mode)
     : filename(filename), mode(mode) {
+     if (mode != "octet" && mode != "netascii" && mode != "")
+          throw std::invalid_argument("Invalid mode");
+
      opcode
          = type == RequestPacketType::Read ? TFTPOpcode::RRQ : TFTPOpcode::WRQ;
 }
@@ -23,6 +26,9 @@ RequestPacket::RequestPacket(RequestPacketType type, std::string filename,
 /* === Core Methods === */
 
 std::vector<char> RequestPacket::toBinary() const {
+     /* If neccessary properties are not set, return an empty vector */
+     if (filename.empty() || mode.empty()) return std::vector<char>();
+
      size_t length = 2 /* opcode */ + filename.length()
                      + 1 /* separator */ + mode.length() + 1 /* separator */;
      std::vector<char> binaryData(length);
