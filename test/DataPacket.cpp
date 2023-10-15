@@ -110,48 +110,40 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(std::string(buf.begin(), buf.end()) == "\n\n\n\n");
           dp.setMode(DataFormat::NetASCII);
           buf = dp.readData();
-          REQUIRE(buf.size() == 8);  // TODO
+          REQUIRE(buf.size() == 8);
           REQUIRE(std::string(buf.begin(), buf.end()) == "\r\n\r\n\r\n\r\n");
           close(fd_newlines);
-
-          /* Long text with newlines */
-          // int fd_long = open("test/files/long.txt", O_RDONLY); // TODO
      }
 
-     /*SECTION("Serialisation and deserialisation") {
-          std::string filename = "example.txt";
-          std::string mode = "octet";
-          RequestPacket rp(RequestPacketType::Read, filename, mode);
+     SECTION("Serialisation and deserialisation") {
+          std::string filename = "test/files/abc.txt";
+          DataPacket dp(filename, 1);
 
           // Packet -> Binary
-          std::vector<char> binary = rp.toBinary();
+          std::vector<char> binary = dp.toBinary();
           REQUIRE(binary[0] == 0x00);  // Opcode (HI)
-          REQUIRE(binary[1] == 0x01);  // Opcode (LO)
+          REQUIRE(binary[1] == 0x03);  // Opcode (LO)
           int offset = 2;
-          std::string filename_bin(binary.begin() + offset,
-                                   binary.begin() + offset + filename.length());
-          REQUIRE(filename_bin == filename);  // Filename
-          offset += filename.length();
-          REQUIRE(binary[offset] == 0x00);  // Separator
-          offset += 1;
-          std::string mode_bin(binary.begin() + offset,
-                               binary.begin() + offset + mode.length());
-          REQUIRE(mode_bin == mode);  // Mode
-          offset += mode.length();
-          REQUIRE(binary[offset] == 0x00);  // Terminator
+          REQUIRE(binary[offset] == 0x00);  // Block number (HI)
+          REQUIRE(binary[offset + 1] == 0x01);  // Block number (LO)
+          offset += 2;
+          std::string data_bin(binary.begin() + offset,
+                               binary.begin() + offset + 3);
+          REQUIRE(data_bin == "abc");  // Data
 
           // Binary -> Packet
-          RequestPacket rp2;
-          rp2.fromBinary(binary);
-          REQUIRE(rp2.getOpcode() == TFTPOpcode::RRQ);
-          REQUIRE(rp2.getFilename() == filename);
-          REQUIRE(rp2.getMode() == mode);
-          REQUIRE(rp == rp2);
+          DataPacket dp2;
+          dp2.fromBinary(binary);
+          REQUIRE(dp2.getOpcode() == TFTPOpcode::DATA);
+          REQUIRE(dp2.getBlockNumber() == 1);
+          REQUIRE(dp2.getData().size() == 3);
+          REQUIRE(dp2.readData().size() == 3);
+          REQUIRE(dp == dp2);
      }
 
      SECTION("Empty serialisation") {
-          RequestPacket rp;
-          std::vector<char> binary = rp.toBinary();
+          DataPacket dp;
+          std::vector<char> binary = dp.toBinary();
           REQUIRE(binary.size() == 0);
-     }*/
+     }
 }
