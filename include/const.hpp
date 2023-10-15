@@ -12,6 +12,11 @@
 constexpr uint8_t MAX_DEBUG_STRING = 5;
 
 /**
+ * @brief Maximum size of a TFTP data packet.
+ */
+static const size_t MAX_DATA_SIZE = 512;
+
+/**
  * @brief Enumeration of all two-byte TFTP opcodes
  * as defined in RFC 1350.
  * @see https://datatracker.ietf.org/doc/html/rfc1350#autoid-5
