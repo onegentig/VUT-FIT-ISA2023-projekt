@@ -74,11 +74,28 @@ class DataPacket : public BasePacket {
       * @return false when not equal
       */
      bool operator==(const DataPacket& other) const {
-          return this->opcode == other.opcode && this->blockN == other.blockN
-                 && this->data == other.data;
+          return this->toBinary() == other.toBinary();
      }
 
      /* === Core Methods === */
+
+     /**
+      * @brief Convert plain binary data to NetASCII.
+      * Method replaces all occurences of `\n` with `\r\n` and `\r` with `\r\0`.
+      * @see https://datatracker.ietf.org/doc/html/rfc764
+      * @param std::vector<char> binary data
+      * @return std::vector<char> NetASCII data
+      */
+     static std::vector<char> toNetascii(const std::vector<char>& data);
+
+     /**
+      * @brief Convert NetASCII data to plain binary.
+      * Method replaces all occurences of `\r\n` with `\n` and `\r\0` with `\r`.
+      * @see https://datatracker.ietf.org/doc/html/rfc764
+      * @param std::vector<char> NetASCII data
+      * @return std::vector<char> Native binary data
+      */
+     static std::vector<char> fromNetascii(const std::vector<char>& data);
 
      /**
       * @brief Reads data from the file descriptor and returns
