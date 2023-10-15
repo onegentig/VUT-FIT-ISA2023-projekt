@@ -32,6 +32,50 @@ DataPacket::DataPacket(const std::string& path, uint16_t blockN)
 
 /* === Core Methods === */
 
+std::vector<char> DataPacket::toNetascii(const std::vector<char>& data) {
+     std::vector<char> netasciiData;
+     for (uint64_t i = 0; i < data.size(); i++) {
+          if (data[i] == '\n') {
+               netasciiData.push_back('\r');
+               netasciiData.push_back('\n');
+          } else if (data[i] == '\r') {
+               if (i + 1 < data.size() && data[i + 1] == '\n') {
+                    netasciiData.push_back('\r');
+                    netasciiData.push_back('\n');
+                    i++;
+               } else {
+                    netasciiData.push_back('\r');
+                    netasciiData.push_back('\0');
+               }
+          } else {
+               netasciiData.push_back(data[i]);
+          }
+     }
+
+     return netasciiData;
+}
+
+std::vector<char> DataPacket::fromNetascii(const std::vector<char>& data) {
+     std::vector<char> binaryData;
+     for (uint64_t i = 0; i < data.size(); i++) {
+          if (data[i] == '\r') {
+               if (i + 1 < data.size() && data[i + 1] == '\n') {
+                    binaryData.push_back('\n');
+                    i++;
+               } else if (i + 1 < data.size() && data[i + 1] == '\0') {
+                    binaryData.push_back('\r');
+                    i++;
+               } else {
+                    binaryData.push_back('\r');
+               }
+          } else {
+               binaryData.push_back(data[i]);
+          }
+     }
+
+     return binaryData;
+}
+
 std::vector<char> DataPacket::readFileData() const {
      if (blockN < 1)
           return std::vector<char>();  // No data to read, return empty vector
@@ -61,17 +105,19 @@ std::vector<char> DataPacket::readFileData() const {
      off_t lastOffset = blockN * MAX_DATA_SIZE;
      std::vector<char> buffer;
      while (totalBytesRead < lastOffset) {
-          char chunk[MAX_DATA_SIZE];
-          ssize_t bytesRead = read(fd, chunk, sizeof(chunk));
+          std::vector<char> chunk(MAX_DATA_SIZE);
+          ssize_t bytesRead = read(fd, chunk.data(), chunk.size());
           if (bytesRead == -1)
-               throw std::runtime_error("Could not read file (0 bytes read)");
+               throw std::runtime_error("Could not read file (-1 error)");
           else if (bytesRead == 0)
                break;  // EOF
 
-          // TODO: Convert chunk to NetASCII
-          std::vector<char> chunkVec(chunk, chunk + bytesRead);
+          /* Convert to NetASCII */
+          chunk.resize(bytesRead);
+          chunk = toNetascii(chunk);
 
-          buffer.insert(buffer.end(), chunkVec.begin(), chunkVec.end());
+          /* Add to buffer */
+          buffer.insert(buffer.end(), chunk.begin(), chunk.end());
           totalBytesRead += bytesRead;
      }
 
@@ -99,6 +145,7 @@ std::vector<char> DataPacket::readData() const {
 
 std::vector<char> DataPacket::toBinary() const {
      std::vector<char> fileData = readData();
+     if (fileData.empty()) return std::vector<char>();
      size_t length = 2 /* opcode */ + 2 /* block number */ + fileData.size();
      std::vector<char> binaryData(length);
 
@@ -125,7 +172,21 @@ void DataPacket::fromBinary(const std::vector<char>& binaryData,
          < 4)  // Min. size is 4B (2B opcode + 2B block number)
           throw std::invalid_argument("Incorrect packet size");
 
-     // TODO: Implement this method
-     (void)binaryData;
-     (void)mode;
+     /* Obtain and validate opcode */
+     uint16_t opcode;
+     std::memcpy(&opcode, binaryData.data(), sizeof(opcode));
+     opcode = ntohs(opcode);
+
+     if (opcode != static_cast<uint16_t>(TFTPOpcode::DATA))
+          throw std::invalid_argument("Incorrect opcode");
+     this->opcode = static_cast<TFTPOpcode>(opcode);
+
+     /* Obtain and validate block number */
+     std::memcpy(&blockN, binaryData.data() + 2, sizeof(blockN));
+     blockN = ntohs(blockN);
+
+     /* Obtain data */
+     size_t offset = 4;  // after 2B opcode + 2B block number
+     data = std::vector<char>(binaryData.begin() + offset, binaryData.end());
+     if (mode == DataFormat::NetASCII) data = fromNetascii(data);
 }

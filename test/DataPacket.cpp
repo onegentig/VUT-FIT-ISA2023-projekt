@@ -118,13 +118,14 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
      SECTION("Serialisation and deserialisation") {
           std::string filename = "test/files/abc.txt";
           DataPacket dp(filename, 1);
+          dp.setMode(DataFormat::NetASCII);
 
           // Packet -> Binary
           std::vector<char> binary = dp.toBinary();
           REQUIRE(binary[0] == 0x00);  // Opcode (HI)
           REQUIRE(binary[1] == 0x03);  // Opcode (LO)
           int offset = 2;
-          REQUIRE(binary[offset] == 0x00);  // Block number (HI)
+          REQUIRE(binary[offset] == 0x00);      // Block number (HI)
           REQUIRE(binary[offset + 1] == 0x01);  // Block number (LO)
           offset += 2;
           std::string data_bin(binary.begin() + offset,
@@ -133,7 +134,7 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
 
           // Binary -> Packet
           DataPacket dp2;
-          dp2.fromBinary(binary);
+          dp2.fromBinary(binary, DataFormat::NetASCII);
           REQUIRE(dp2.getOpcode() == TFTPOpcode::DATA);
           REQUIRE(dp2.getBlockNumber() == 1);
           REQUIRE(dp2.getData().size() == 3);
