@@ -34,6 +34,21 @@ enum TFTPOpcode : uint16_t {
 };
 
 /**
+ * @brief Enumeration of TFTP error codes (for ERROR packets).
+ * @see https://datatracker.ietf.org/doc/html/rfc1350#page-10
+ */
+enum TFTPErrorCode : uint16_t {
+     Unknown = 0,           /**< Not defined, see error message (if any). */
+     FileNotFound = 1,      /**< File not found. */
+     AccessViolation = 2,   /**< Access violation. */
+     DiskFull = 3,          /**< Disk full or allocation exceeded. */
+     IllegalOperation = 4,  /**< Illegal TFTP operation. */
+     UnknownTID = 5,        /**< Unknown transfer ID. */
+     FileAlreadyExists = 6, /**< File already exists. */
+     NoSuchUser = 7,        /**< No such user. */
+};
+
+/**
  * @brief Enumeration of the data packet modes.
  */
 enum DataFormat {
