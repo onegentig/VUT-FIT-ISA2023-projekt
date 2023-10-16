@@ -9,5 +9,6 @@
           "cli",
           "core",
           "tests"
-     ]
+     ],
+     "testMate.cpp.test.executables": "tests"
 }
