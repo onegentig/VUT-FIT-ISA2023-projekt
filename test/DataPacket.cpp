@@ -95,8 +95,8 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(std::string(buf.begin(), buf.end()) == "abc");
           dp.setMode(DataFormat::NetASCII);
           buf = dp.readData();
-          REQUIRE(buf.size() == 3);
-          REQUIRE(std::string(buf.begin(), buf.end()) == "abc");
+          REQUIRE(buf.size() == 4);  // 3 + 1 for null terminator
+          REQUIRE(buf == std::vector<char>{'a', 'b', 'c', '\0'});
           close(fd_abc);
 
           /* 4 newlines */
@@ -110,8 +110,10 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(std::string(buf.begin(), buf.end()) == "\n\n\n\n");
           dp.setMode(DataFormat::NetASCII);
           buf = dp.readData();
-          REQUIRE(buf.size() == 8);
-          REQUIRE(std::string(buf.begin(), buf.end()) == "\r\n\r\n\r\n\r\n");
+          REQUIRE(buf.size() == 9);  // 4 * 2 (LF->CRLF) + 1 (null terminator)
+          REQUIRE(buf
+                  == std::vector<char>{'\r', '\n', '\r', '\n', '\r', '\n', '\r',
+                                       '\n', '\0'});
           close(fd_newlines);
      }
 
@@ -131,14 +133,18 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           std::string data_bin(binary.begin() + offset,
                                binary.begin() + offset + 3);
           REQUIRE(data_bin == "abc");  // Data
+          REQUIRE(binary[offset + 3]
+                  == '\0');  // Null terminator (because NetASCII)
+          REQUIRE(binary.size()
+                  == 8);  // 2 (op) + 2 (block) + 4 (data incl. \0)
 
           // Binary -> Packet
           DataPacket dp2;
           dp2.fromBinary(binary, DataFormat::NetASCII);
           REQUIRE(dp2.getOpcode() == TFTPOpcode::DATA);
           REQUIRE(dp2.getBlockNumber() == 1);
-          REQUIRE(dp2.getData().size() == 3);
-          REQUIRE(dp2.readData().size() == 3);
+          REQUIRE(dp2.getData().size() == 4);
+          REQUIRE(dp2.readData().size() == 4);
           REQUIRE(dp == dp2);
      }
 
