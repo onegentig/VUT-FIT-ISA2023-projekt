@@ -14,14 +14,6 @@
 #     include "packet/BasePacket.hpp"
 
 /**
- * @brief Enumeration of the data packet modes.
- */
-enum DataFormat {
-     NetASCII = 0, /**< NetASCII mode */
-     Octet = 1,    /**< Octet mode */
-};
-
-/**
  * @brief TFTP data packet class.
  * Represents the DATA (opcode 3) packet that contains the binary data
  * along with the block number (staring from 1). The data field length

@@ -7,18 +7,17 @@
 
 #include "packet/RequestPacket.hpp"
 
+#include <algorithm>
+
 /* === Constructors === */
 
-RequestPacket::RequestPacket() : filename(""), mode("") {
+RequestPacket::RequestPacket() : filename(""), mode(DataFormat::Octet) {
      opcode = TFTPOpcode::RRQ;
 }
 
 RequestPacket::RequestPacket(RequestPacketType type, std::string filename,
-                             std::string mode)
+                             DataFormat mode)
     : filename(filename), mode(mode) {
-     if (mode != "octet" && mode != "netascii" && mode != "")
-          throw std::invalid_argument("Invalid mode");
-
      opcode
          = type == RequestPacketType::Read ? TFTPOpcode::RRQ : TFTPOpcode::WRQ;
 }
@@ -26,13 +25,14 @@ RequestPacket::RequestPacket(RequestPacketType type, std::string filename,
 /* === Core Methods === */
 
 std::vector<char> RequestPacket::toBinary() const {
-     /* If neccessary properties are not set, return an empty vector */
-     if (filename.empty() || mode.empty()) return std::vector<char>();
+     /* If filename is not set, return an empty vector */
+     if (filename.empty()) return std::vector<char>();
 
-     std::vector<char> filenameBin = BasePacket::toNetascii(std::vector<char>(
-         filename.begin(), filename.end()));
+     std::string modeStr = this->getModeStr();
+     std::vector<char> filenameBin = BasePacket::toNetascii(
+         std::vector<char>(filename.begin(), filename.end()));
      std::vector<char> modeBin = BasePacket::toNetascii(
-           std::vector<char>(mode.begin(), mode.end()));
+         std::vector<char>(modeStr.begin(), modeStr.end()));
 
      size_t length = 2 /* opcode */ + filenameBin.size()
                      + 1 /* separator */ + modeBin.size() + 1 /* separator */;
@@ -46,7 +46,7 @@ std::vector<char> RequestPacket::toBinary() const {
      size_t offset = 2;  // after 2B opcode
      std::memcpy(binaryData.data() + offset, filenameBin.data(),
                  filenameBin.size());
-     offset += filename.length() + 1; // after filename + separator
+     offset += filename.length() + 1;  // after filename + separator
      std::memcpy(binaryData.data() + offset, modeBin.data(), modeBin.size());
 
      return binaryData;
@@ -67,7 +67,17 @@ void RequestPacket::fromBinary(const std::vector<char>& binaryData) {
      this->opcode = static_cast<TFTPOpcode>(opcode);
 
      /* Search for the filename and mode strings */
+     std::string modeStr;
      size_t offset = 2;
      offset = findcstr(binaryData, offset, filename);
-     offset = findcstr(binaryData, offset, mode);
+     offset = findcstr(binaryData, offset, modeStr);
+
+     /* Validate and parse mode (case insensitive) */
+     std::transform(modeStr.begin(), modeStr.end(), modeStr.begin(), ::tolower);
+     if (modeStr == "octet")
+          mode = DataFormat::Octet;
+     else if (modeStr == "netascii")
+          mode = DataFormat::NetASCII;
+     else
+          throw std::invalid_argument("Incorrect mode");
 }
