@@ -17,7 +17,7 @@ RequestPacket::RequestPacket() : filename(""), mode(DataFormat::Octet) {
 
 RequestPacket::RequestPacket(RequestPacketType type, std::string filename,
                              DataFormat mode)
-    : filename(filename), mode(mode) {
+    : filename(std::move(filename)), mode(mode) {
      opcode
          = type == RequestPacketType::Read ? TFTPOpcode::RRQ : TFTPOpcode::WRQ;
 }
@@ -74,10 +74,11 @@ void RequestPacket::fromBinary(const std::vector<char>& binaryData) {
 
      /* Validate and parse mode (case insensitive) */
      std::transform(modeStr.begin(), modeStr.end(), modeStr.begin(), ::tolower);
-     if (modeStr == "octet")
+     if (modeStr == "octet") {
           mode = DataFormat::Octet;
-     else if (modeStr == "netascii")
+     } else if (modeStr == "netascii") {
           mode = DataFormat::NetASCII;
-     else
+     } else {
           throw std::invalid_argument("Incorrect mode");
+     }
 }

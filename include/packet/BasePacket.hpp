@@ -164,7 +164,7 @@ class BasePacket {
           auto bin = toBinary();
           for (size_t i = 0; i < bin.size(); ++i) {
                stream << std::hex << std::setw(2) << std::setfill('0')
-                      << (int)bin[i] << " ";
+                      << static_cast<int>(bin[i]) << " ";
           }
           std::cout << stream.str() << std::endl;
 

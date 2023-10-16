@@ -170,7 +170,7 @@ class DataPacket : public BasePacket {
       * @param std::vector<char> data
       * @return void
       */
-     void setData(std::vector<char> data) { this->data = data; }
+     void setData(std::vector<char> data) { this->data = std::move(data); }
 
      /**
       * @brief Sets the file descriptor.

@@ -91,7 +91,9 @@ class RequestPacket : public BasePacket {
       * @param std::string filename
       * @return void
       */
-     void setFilename(std::string filename) { this->filename = filename; }
+     void setFilename(std::string filename) {
+          this->filename = std::move(filename);
+     }
 
      /**
       * @brief Returns the transfer format mode.
