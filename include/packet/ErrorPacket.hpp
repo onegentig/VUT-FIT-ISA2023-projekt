@@ -27,20 +27,17 @@ class ErrorPacket : public BasePacket {
 
      /**
       * @brief Constructs a new ERROR packet object with set error code.
-      * @param RequestPacketType type
-      * @param std::string filename
-      * @param DataFormat mode
-      * @return RequestPacket
+      * @param TFTPErrorCode errcode
+      * @return ErrorPacket
       */
      explicit ErrorPacket(TFTPErrorCode errcode);
 
      /**
       * @brief Constructs a new ERROR packet object with set error code and
       * message.
-      * @param RequestPacketType type
-      * @param std::string filename
-      * @param DataFormat mode
-      * @return RequestPacket
+      * @param TFTPErrorCode errcode
+      * @param std::string msg
+      * @return ErrorPacket
       */
      ErrorPacket(TFTPErrorCode errcode, std::string msg);
 

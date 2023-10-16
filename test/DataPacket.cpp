@@ -16,7 +16,7 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(dp.getFd() == -1);
           REQUIRE(dp.getBlockNumber() == 0);
           REQUIRE(dp.getData().size() == 0);
-          REQUIRE(dp.getMode() == DataFormat::Octet);
+          REQUIRE(dp.getMode() == TFTPDataFormat::Octet);
      }
 
      SECTION("Parametrised constructor init") {
@@ -27,7 +27,7 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(dp_raw.getBlockNumber() == 1);
           REQUIRE(dp_raw.getData().size() == 1023);
           REQUIRE(dp_raw.readData().size() == MAX_DATA_SIZE);
-          REQUIRE(dp_raw.getMode() == DataFormat::Octet);
+          REQUIRE(dp_raw.getMode() == TFTPDataFormat::Octet);
 
           /* File descriptor */
           int fd = open("test/files/abc.txt", O_RDONLY);
@@ -38,7 +38,7 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(dp_fd.getBlockNumber() == 1);
           REQUIRE(dp_fd.getData().size() == 0);
           REQUIRE(dp_fd.readData().size() == 3);
-          REQUIRE(dp_fd.getMode() == DataFormat::Octet);
+          REQUIRE(dp_fd.getMode() == TFTPDataFormat::Octet);
           close(fd);
 
           /* Path */
@@ -48,7 +48,7 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(dp_path.getBlockNumber() == 1);
           REQUIRE(dp_path.getData().size() == 0);
           REQUIRE(dp_path.readData().size() == 3);
-          REQUIRE(dp_path.getMode() == DataFormat::Octet);
+          REQUIRE(dp_path.getMode() == TFTPDataFormat::Octet);
           close(dp_path.getFd());
      }
 
@@ -89,11 +89,11 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(fd_abc != -1);
           dp.setFd(fd_abc);
           dp.setBlockNumber(1);
-          dp.setMode(DataFormat::Octet);
+          dp.setMode(TFTPDataFormat::Octet);
           buf = dp.readData();
           REQUIRE(buf.size() == 3);
           REQUIRE(std::string(buf.begin(), buf.end()) == "abc");
-          dp.setMode(DataFormat::NetASCII);
+          dp.setMode(TFTPDataFormat::NetASCII);
           buf = dp.readData();
           REQUIRE(buf.size() == 4);  // 3 + 1 for null terminator
           REQUIRE(buf == std::vector<char>{'a', 'b', 'c', '\0'});
@@ -104,11 +104,11 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(fd_newlines != -1);
           dp.setFd(fd_newlines);
           dp.setBlockNumber(1);
-          dp.setMode(DataFormat::Octet);
+          dp.setMode(TFTPDataFormat::Octet);
           buf = dp.readData();
           REQUIRE(buf.size() == 4);
           REQUIRE(std::string(buf.begin(), buf.end()) == "\n\n\n\n");
-          dp.setMode(DataFormat::NetASCII);
+          dp.setMode(TFTPDataFormat::NetASCII);
           buf = dp.readData();
           REQUIRE(buf.size() == 9);  // 4 * 2 (LF->CRLF) + 1 (null terminator)
           REQUIRE(buf
@@ -120,7 +120,7 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
      SECTION("Serialisation and deserialisation") {
           std::string filename = "test/files/abc.txt";
           DataPacket dp(filename, 1);
-          dp.setMode(DataFormat::NetASCII);
+          dp.setMode(TFTPDataFormat::NetASCII);
 
           // Packet -> Binary
           std::vector<char> binary = dp.toBinary();
@@ -140,7 +140,7 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
 
           // Binary -> Packet
           DataPacket dp2;
-          dp2.fromBinary(binary, DataFormat::NetASCII);
+          dp2.fromBinary(binary, TFTPDataFormat::NetASCII);
           REQUIRE(dp2.getOpcode() == TFTPOpcode::DATA);
           REQUIRE(dp2.getBlockNumber() == 1);
           REQUIRE(dp2.getData().size() == 4);
