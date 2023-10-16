@@ -68,6 +68,82 @@ class BasePacket {
                            // terminator
      }
 
+     /**
+      * @brief Convert plain binary data to NetASCII.
+      * Method replaces all occurences of `\n` with `\r\n` and `\r` with `\r\0`.
+      * @see https://datatracker.ietf.org/doc/html/rfc764
+      * @see https://www.reissenzahn.com/protocols/tftp#netascii
+      * @param std::vector<char> binary data
+      * @return std::vector<char> NetASCII data
+      */
+     static std::vector<char> toNetascii(const std::vector<char>& data) {
+          std::vector<char> netasciiData;
+          for (uint64_t i = 0; i < data.size(); i++) {
+               if (data[i] == '\n') {
+                    // LF -> CR LF
+                    netasciiData.push_back('\r');
+                    netasciiData.push_back('\n');
+               } else if (data[i] == '\r') {
+                    if (i + 1 < data.size() && data[i + 1] == '\n') {
+                         // CR LF -> CR LF
+                         netasciiData.push_back('\r');
+                         netasciiData.push_back('\n');
+                         i++;
+                    } else {
+                         // CR -> CR NUL
+                         netasciiData.push_back('\r');
+                         netasciiData.push_back('\0');
+                    }
+               } else {
+                    // Regular character
+                    netasciiData.push_back(data[i]);
+               }
+          }
+
+          // Add null terminator
+          if (netasciiData.size() == 0 || netasciiData.back() != '\0')
+               netasciiData.push_back('\0');
+
+          return netasciiData;
+     }
+
+     /**
+      * @brief Convert NetASCII data to plain binary.
+      * Method replaces all occurences of `\r\n` with `\n` and `\r\0` with `\r`.
+      * @see https://datatracker.ietf.org/doc/html/rfc764
+      * @see https://www.reissenzahn.com/protocols/tftp#netascii
+      * @param std::vector<char> NetASCII data
+      * @return std::vector<char> Native binary data
+      */
+     static std::vector<char> fromNetascii(const std::vector<char>& data) {
+          std::vector<char> binaryData;
+          for (uint64_t i = 0; i < data.size(); i++) {
+               if (data[i] == '\r') {
+                    if (i + 1 < data.size() && data[i + 1] == '\n') {
+                         // CR LF -> LF
+                         binaryData.push_back('\n');
+                         i++;
+                    } else if (i + 1 < data.size() && data[i + 1] == '\0') {
+                         // CR NUL -> CR
+                         binaryData.push_back('\r');
+                         i++;
+                    } else {
+                         // CR -> CR
+                         binaryData.push_back('\r');
+                    }
+               } else {
+                    // Regular character
+                    binaryData.push_back(data[i]);
+               }
+          }
+
+          // Remove null terminator
+          if (binaryData.size() > 0 && binaryData.back() == '\0')
+               binaryData.pop_back();
+
+          return binaryData;
+     }
+
      /* === Getters and Setters === */
 
      /**
