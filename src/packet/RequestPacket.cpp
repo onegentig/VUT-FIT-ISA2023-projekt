@@ -29,8 +29,13 @@ std::vector<char> RequestPacket::toBinary() const {
      /* If neccessary properties are not set, return an empty vector */
      if (filename.empty() || mode.empty()) return std::vector<char>();
 
-     size_t length = 2 /* opcode */ + filename.length()
-                     + 1 /* separator */ + mode.length() + 1 /* separator */;
+     std::vector<char> filenameBin = BasePacket::toNetascii(std::vector<char>(
+         filename.begin(), filename.end()));
+     std::vector<char> modeBin = BasePacket::toNetascii(
+           std::vector<char>(mode.begin(), mode.end()));
+
+     size_t length = 2 /* opcode */ + filenameBin.size()
+                     + 1 /* separator */ + modeBin.size() + 1 /* separator */;
      std::vector<char> binaryData(length);
 
      /* Convert and copy opcode in network byte order */
@@ -39,10 +44,10 @@ std::vector<char> RequestPacket::toBinary() const {
 
      /* Insert filename and mode strings to vector */
      size_t offset = 2;  // after 2B opcode
-     std::memcpy(binaryData.data() + offset, filename.c_str(),
-                 filename.length());
-     offset += filename.length() + 1;  // after filename + 1B separator
-     std::memcpy(binaryData.data() + offset, mode.c_str(), mode.length());
+     std::memcpy(binaryData.data() + offset, filenameBin.data(),
+                 filenameBin.size());
+     offset += filename.length() + 1; // after filename + separator
+     std::memcpy(binaryData.data() + offset, modeBin.data(), modeBin.size());
 
      return binaryData;
 }
