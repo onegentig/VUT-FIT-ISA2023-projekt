@@ -38,11 +38,11 @@ class RequestPacket : public BasePacket {
       * @brief Constructs a new RQ packet object with set parameters.
       * @param RequestPacketType type
       * @param std::string filename
-      * @param std::string mode
+      * @param DataFormat mode
       * @return RequestPacket
       */
      explicit RequestPacket(RequestPacketType type, std::string filename,
-                            std::string mode);
+                            DataFormat mode);
 
      /**
       * @brief Checks equality of two RQ packets.
@@ -95,22 +95,24 @@ class RequestPacket : public BasePacket {
 
      /**
       * @brief Returns the transfer format mode.
+      * @return DataFormat - mode
+      */
+     DataFormat getMode() const { return mode; }
+
+     /**
+      * @brief Returns the mode (as string).
       * @return std::string - mode
       */
-     std::string getMode() const { return mode; }
+     std::string getModeStr() const {
+          return mode == DataFormat::Octet ? "octet" : "netascii";
+     }
 
      /**
       * @brief Sets the mode.
-      * @param std::string mode
+      * @param DataFormat mode
       * @return void
       */
-     void setMode(std::string mode) {
-          if (mode != "octet" && mode != "netascii") {
-               throw std::invalid_argument("Invalid mode");
-          }
-
-          this->mode = mode;
-     }
+     void setMode(DataFormat mode) { this->mode = mode; }
 
      /**
       * @brief Sets the type (read || write)
@@ -124,7 +126,7 @@ class RequestPacket : public BasePacket {
 
    private:
      std::string filename; /**< Filename (NetASCII string) */
-     std::string mode;     /**< Mode (NetASCII string, "octet" or "netascii") */
+     DataFormat mode;      /**< Mode (NetASCII string, "octet" or "netascii") */
 };
 
 #endif

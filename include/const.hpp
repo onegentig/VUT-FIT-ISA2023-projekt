@@ -6,6 +6,8 @@
 #ifndef CONST_HPP
 #define CONST_HPP
 
+/* === Constants === */
+
 /**
  * @brief Maximum number of bytes of a cstring to print in `dprint()`.
  */
@@ -15,6 +17,8 @@ constexpr uint8_t MAX_DEBUG_STRING = 5;
  * @brief Maximum size of a TFTP data packet.
  */
 static const size_t MAX_DATA_SIZE = 512;
+
+/* === Enumerations === */
 
 /**
  * @brief Enumeration of all two-byte TFTP opcodes
@@ -27,6 +31,14 @@ enum TFTPOpcode : uint16_t {
      DATA = 3,  /**< Data */
      ACK = 4,   /**< Acknowledgement */
      ERROR = 5, /**< Error */
+};
+
+/**
+ * @brief Enumeration of the data packet modes.
+ */
+enum DataFormat {
+     Octet = 0,    /**< Octet mode */
+     NetASCII = 1, /**< NetASCII mode */
 };
 
 #endif
