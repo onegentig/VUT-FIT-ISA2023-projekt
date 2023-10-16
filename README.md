@@ -1,6 +1,6 @@
 # ISA PROJEKT, FIT VUT 2023 #
 
-*Projekt (TFTP klient a server) z predmetu Sieťové aplikácie a správa sietí (ISA), tretí semester bakalárskeho štúdia BIT na FIT VUT/BUT, ak.rok 2023/2024)*
+*Projekt (TFTP klient a server) z predmetu Sieťové aplikácie a správa sietí (ISA), tretí semester bakalárskeho štúdia BIT na FIT VUT/BUT, ak.rok 2023/2024*
 
 🔒 **Aktívny súkromný repozitár — nezverejňovať!**
 <!-- 🗄️ **Súkromný archivovaný repozitár!** -->
@@ -15,14 +15,13 @@ Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/st
 
 - [X] ⏰ 2023-09-05 **Zadanie**
 - [X] ⏰ 2023-09-06 **Registrácia**
-- [ ] Vytvoriť triedy pre packety
+- [X] Vytvoriť triedy pre packety
 - [ ] Vytvoriť základ pre triedy klienta a servera
 - [ ] Klientový spúšťač a testovanie
 - [ ] Serverový spúšťač a testovanie
 - [ ] Rozšírenia ...
 - [ ] ⏰ 2023-11-20 **Deadline**
 
-<!-- Môže-nemusí byť -->
 ### Môže sa hodiť ###
 
 - [TFTP Protocol Standard](https://datatracker.ietf.org/doc/html/rfc1350)
@@ -36,5 +35,4 @@ Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/st
 
 ----------------------------------------------
 
-<!-- https://wakatime.com/share/badges/projects -->
-<div align="center"><a href="https://wakatime.com"><img alt="wakatime" height="20em" src="https://wakatime.com/static/img/badge-preview.png" /></a></div>
+<div align="center"><a href="https://wakatime.com"><img alt="wakatime" height="20em" src="https://wakatime.com/badge/user/dd421270-8f1c-43aa-aa5b-ec52a2a18852/project/cec5aeb3-ca5f-4d57-a522-6de66d9ce6bf.svg?style=for-the-badge" /></a></div>
