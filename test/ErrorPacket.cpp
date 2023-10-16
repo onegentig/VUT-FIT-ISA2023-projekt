@@ -62,7 +62,7 @@ TEST_CASE("Error Packet Functionality", "[packet_rrq]") {
           ep2.fromBinary(binary);
           REQUIRE(ep2.getOpcode() == TFTPOpcode::ERROR);
           REQUIRE(ep2.getErrcode() == TFTPErrorCode::DiskFull);
-          REQUIRE(ep2.getMessage().value() == "I can't take it anymore");
+          REQUIRE(ep2.getMessage() == "I can't take it anymore");
           REQUIRE(ep == ep2);
      }
 

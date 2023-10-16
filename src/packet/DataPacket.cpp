@@ -41,12 +41,12 @@ std::vector<char> DataPacket::readFileData() const {
 
      /* Seek to file start (NetASCII) or block start (octet) */
      off_t startOffset
-         = mode == DataFormat::Octet ? (blockN - 1) * MAX_DATA_SIZE : 0;
+         = mode == TFTPDataFormat::Octet ? (blockN - 1) * MAX_DATA_SIZE : 0;
      if (lseek(fd, startOffset, SEEK_SET) == -1)
           throw std::runtime_error("Cannot seek to file start");
 
      /* Binary data can be directly cut and returned */
-     if (mode == DataFormat::Octet) {
+     if (mode == TFTPDataFormat::Octet) {
           char data[MAX_DATA_SIZE];
           ssize_t bytesRead = read(fd, data, MAX_DATA_SIZE);
           if (bytesRead == -1)
@@ -121,11 +121,11 @@ std::vector<char> DataPacket::toBinary() const {
 }
 
 void DataPacket::fromBinary(const std::vector<char>& binaryData) {
-     return fromBinary(binaryData, DataFormat::Octet);
+     return fromBinary(binaryData, TFTPDataFormat::Octet);
 }
 
 void DataPacket::fromBinary(const std::vector<char>& binaryData,
-                            DataFormat mode) {
+                            TFTPDataFormat mode) {
      if (binaryData.size()
          < 4)  // Min. size is 4B (2B opcode + 2B block number)
           throw std::invalid_argument("Incorrect packet size");

@@ -9,11 +9,6 @@
 /* === Constants === */
 
 /**
- * @brief Maximum number of bytes of a cstring to print in `dprint()`.
- */
-constexpr uint8_t MAX_DEBUG_STRING = 5;
-
-/**
  * @brief Maximum size of a TFTP data packet.
  */
 static const size_t MAX_DATA_SIZE = 512;
@@ -51,7 +46,7 @@ enum TFTPErrorCode : uint16_t {
 /**
  * @brief Enumeration of the data packet modes.
  */
-enum DataFormat {
+enum TFTPDataFormat {
      Octet = 0,    /**< Octet mode */
      NetASCII = 1, /**< NetASCII mode */
 };

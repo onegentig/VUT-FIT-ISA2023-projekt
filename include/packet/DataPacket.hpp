@@ -115,10 +115,10 @@ class DataPacket : public BasePacket {
       * @throws std::invalid_argument when vector is not a proper DATA packet
       *
       * @param std::vector<char> packet in binary
-      * @param DataFormat mode
+      * @param TFTPDataFormat mode
       * @return void
       */
-     void fromBinary(const std::vector<char>& binaryData, DataFormat mode);
+     void fromBinary(const std::vector<char>& binaryData, TFTPDataFormat mode);
 
      /* === Getters and Setters === */
 
@@ -137,23 +137,23 @@ class DataPacket : public BasePacket {
 
      /**
       * @brief Sets the mode.
-      * @param DataFormat mode
+      * @param TFTPDataFormat mode
       * @return void
       */
-     void setMode(DataFormat mode) { this->mode = mode; }
+     void setMode(TFTPDataFormat mode) { this->mode = mode; }
 
      /**
       * @brief Returns the mode.
-      * @return DataFormat - mode
+      * @return TFTPDataFormat - mode
       */
-     DataFormat getMode() const { return mode; }
+     TFTPDataFormat getMode() const { return mode; }
 
      /**
       * @brief Returns the mode (as string).
       * @return std::string - mode
       */
      std::string getModeStr() const {
-          return mode == DataFormat::Octet ? "octet" : "netascii";
+          return mode == TFTPDataFormat::Octet ? "octet" : "netascii";
      }
 
      /**
@@ -189,7 +189,7 @@ class DataPacket : public BasePacket {
      int fd = -1;                         /**< File descriptor */
      uint16_t blockN;                     /**< Block number */
      std::vector<char> data;              /**< Binary data */
-     DataFormat mode = DataFormat::Octet; /**< Transfer format mode */
+     TFTPDataFormat mode = TFTPDataFormat::Octet; /**< Transfer format mode */
 };
 
 #endif
