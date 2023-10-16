@@ -55,7 +55,6 @@ TEST_CASE("Error Packet Functionality", "[packet_rrq]") {
           std::string msgBin(binary.begin() + offset,
                              binary.begin() + offset + 23);
           REQUIRE(msgBin == "I can't take it anymore");  // Message
-          ep.hexdump();
 
           // Binary -> Packet
           ErrorPacket ep2;
