@@ -12,7 +12,7 @@
 DataPacket::DataPacket() : blockN(0) { opcode = TFTPOpcode::DATA; }
 
 DataPacket::DataPacket(std::vector<char> data, uint16_t blockN)
-    : blockN(blockN), data(data) {
+    : blockN(blockN), data(std::move(data)) {
      opcode = TFTPOpcode::DATA;
 }
 
@@ -63,10 +63,12 @@ std::vector<char> DataPacket::readFileData() const {
      while (totalBytesRead < lastOffset) {
           std::vector<char> chunk(MAX_DATA_SIZE);
           ssize_t bytesRead = read(fd, chunk.data(), chunk.size());
-          if (bytesRead == -1)
+
+          if (bytesRead == -1) {
                throw std::runtime_error("Could not read file (-1 error)");
-          else if (bytesRead == 0)
+          } else if (bytesRead == 0) {
                break;  // EOF
+          }
 
           /* Convert to NetASCII */
           chunk.resize(bytesRead);
@@ -135,6 +137,7 @@ void DataPacket::fromBinary(const std::vector<char>& binaryData,
 
      if (opcode != static_cast<uint16_t>(TFTPOpcode::DATA))
           throw std::invalid_argument("Incorrect opcode");
+
      this->opcode = static_cast<TFTPOpcode>(opcode);
 
      /* Obtain and validate block number */

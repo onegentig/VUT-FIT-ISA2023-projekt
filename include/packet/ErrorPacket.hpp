@@ -102,7 +102,7 @@ class ErrorPacket : public BasePacket {
       * @param std::string msg
       * @return void
       */
-     void setMessage(std::string msg) { this->msg = msg; }
+     void setMessage(const std::string& msg) { this->msg = msg; }
 
      /**
       * @brief Removes the error message.
