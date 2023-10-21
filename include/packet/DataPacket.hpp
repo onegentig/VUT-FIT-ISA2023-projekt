@@ -9,7 +9,6 @@
 #ifndef DATA_PACKET_HPP
 #     define DATA_PACKET_HPP
 #     include <fcntl.h>
-#     include <unistd.h>
 
 #     include "packet/BasePacket.hpp"
 
@@ -186,9 +185,9 @@ class DataPacket : public BasePacket {
      int getFd() const { return fd; }
 
    private:
-     int fd = -1;                         /**< File descriptor */
-     uint16_t blockN;                     /**< Block number */
-     std::vector<char> data;              /**< Binary data */
+     int fd = -1;                                 /**< File descriptor */
+     uint16_t blockN;                             /**< Block number */
+     std::vector<char> data;                      /**< Binary data */
      TFTPDataFormat mode = TFTPDataFormat::Octet; /**< Transfer format mode */
 };
 
