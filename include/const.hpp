@@ -19,6 +19,11 @@ static const size_t MAX_DATA_SIZE = 512;
  */
 static const uint16_t DEFAULT_TFTP_PORT = 69;
 
+/**
+ * @brief Timeout for the TFTP server in seconds.
+ */
+static const int TIMEOUT = 4;
+
 /* === Enumerations === */
 
 /**
