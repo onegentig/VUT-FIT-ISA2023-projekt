@@ -13,6 +13,12 @@
  */
 static const size_t MAX_DATA_SIZE = 512;
 
+/**
+ * @brief Default TFTP port
+ * @see https://datatracker.ietf.org/doc/html/rfc1350#section-4
+ */
+static const uint16_t DEFAULT_TFTP_PORT = 69;
+
 /* === Enumerations === */
 
 /**
