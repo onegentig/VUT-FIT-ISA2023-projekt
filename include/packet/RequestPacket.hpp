@@ -128,7 +128,7 @@ class RequestPacket : public BasePacket {
 
    private:
      std::string filename; /**< Filename (NetASCII string) */
-     TFTPDataFormat mode;      /**< Mode (NetASCII string, "octet" or "netascii") */
+     TFTPDataFormat mode;  /**< Mode (NetASCII string, "octet" or "netascii") */
 };
 
 #endif
