@@ -6,6 +6,7 @@
  */
 
 #include "common.hpp"
+#include "server.hpp"
 
 int main(int argc, char* argv[]) {
      std::string usage = "  Usage: tftp-server [-p port] <path>";
@@ -47,6 +48,9 @@ int main(int argc, char* argv[]) {
           return EXIT_FAILURE;
      }
 
-     // TODO: Implement server
-     std::cerr << "TFTP server not implemented" << std::endl;
+     /* Create server */
+     TFTPServer server(rootdir, port);
+     std::cout << ":: Starting TFTP Server..." << std::endl;
+
+     server.start();
 }

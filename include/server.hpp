@@ -62,7 +62,7 @@ class TFTPServer {
       * @return true when started successfully,
       * @return false otherwise
       */
-     bool start();
+     void start();
 
      /**
       * @brief Stops the TFTP server.
