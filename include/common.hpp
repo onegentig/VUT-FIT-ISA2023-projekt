@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <iostream>

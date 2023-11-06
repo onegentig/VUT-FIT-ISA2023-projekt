@@ -39,7 +39,7 @@ TFTPServer::TFTPServer(std::string rootdir, int port)
 
 /* === Server Flow === */
 
-bool TFTPServer::start() {
+void TFTPServer::start() {
      /** @see
       * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=21
       */
@@ -48,7 +48,7 @@ bool TFTPServer::start() {
      this->fd = socket(AF_INET, SOCK_DGRAM, 0);
      if (this->fd == -1) {
           std::cerr << "!ERR! Failed to create a socket!" << std::endl;
-          return false;
+          return;
      }
 
      /* Set up address */
@@ -66,7 +66,7 @@ bool TFTPServer::start() {
                     reinterpret_cast<char*>(&timeout), sizeof(timeout))
          < 0) {
           std::cerr << "!ERR! Failed to set socket timeout!" << std::endl;
-          return false;
+          return;
      }
 
      /* Allow address:port reuse */
@@ -75,7 +75,7 @@ bool TFTPServer::start() {
                     sizeof(optval))
          < 0) {
           std::cerr << "!ERR! Failed to set socket options!" << std::endl;
-          return false;
+          return;
      }
 
      /* Bind socket */
@@ -83,19 +83,19 @@ bool TFTPServer::start() {
               addr_len)
          < 0) {
           std::cerr << "!ERR! Failed to bind socket!" << std::endl;
-          return false;
+          return;
      }
 
      /* Make the listening socket non-blocking */
      int flags = fcntl(this->fd, F_GETFL, 0);
      if (flags < 0) {
           std::cerr << "!ERR! Failed to get socket flags!" << std::endl;
-          return false;
+          return;
      }
      flags |= O_NONBLOCK;
      if (fcntl(this->fd, F_SETFL, flags) < 0) {
           std::cerr << "!ERR! Failed to set socket flags!" << std::endl;
-          return false;
+          return;
      }
 
      /* Listen */
@@ -106,12 +106,52 @@ void TFTPServer::connListen() {
      this->running.store(true);
      std::cout << "TFTP server listening on port " << this->port << std::endl;
 
+     // TODO: This logic should be moved to the loop below
+     struct sockaddr_in c_addr {};
+     socklen_t c_addr_len = sizeof(c_addr);
+     std::array<uint8_t, MAX_PACKET_SIZE> buffer{0};
+
      /** @see
       * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=23
       */
      while (this->running.load()) {
-          // TODO: Implement
+          // TODO: All this is just a "for now" thing for testing and all that
+          memset(buffer.data(), 0, buffer.size());
+          memset(&c_addr, 0, c_addr_len);
+
+          ssize_t read_size = recvfrom(
+              this->fd, buffer.data(), MAX_PACKET_SIZE, 0,
+              reinterpret_cast<struct sockaddr*>(&c_addr), &c_addr_len);
+
+          if (read_size < 0) {
+               if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    /* No new connections */
+                    std::this_thread::sleep_for(
+                        std::chrono::milliseconds(THREAD_DELAY));
+                    continue;
+               }
+
+               std::cerr << "Failed to receive data: " << strerror(errno)
+                         << std::endl;
+               continue;
+          }
+
+          std::cout << "Received " << read_size << " bytes from "
+                    << inet_ntoa(c_addr.sin_addr) << ":"
+                    << ntohs(c_addr.sin_port) << std::endl;
+
+          /* Short sleep (makes the loop a bit less CPU-heavy) */
+          std::this_thread::sleep_for(std::chrono::milliseconds(THREAD_DELAY));
      }
+}
+
+void TFTPServer::stop() {
+     this->running.store(false);
+     std::cout << "Stopping server..." << std::endl;
+
+     shutdown(this->fd, SHUT_RDWR);
+     close(this->fd);
+     this->fd = -1;
 }
 
 /* === Helper Methods === */
