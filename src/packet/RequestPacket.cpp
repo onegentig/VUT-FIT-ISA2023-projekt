@@ -15,11 +15,10 @@ RequestPacket::RequestPacket() : filename(""), mode(TFTPDataFormat::Octet) {
      opcode = TFTPOpcode::RRQ;
 }
 
-RequestPacket::RequestPacket(RequestPacketType type, std::string filename,
+RequestPacket::RequestPacket(TFTPRequestType type, std::string filename,
                              TFTPDataFormat mode)
     : filename(std::move(filename)), mode(mode) {
-     opcode
-         = type == RequestPacketType::Read ? TFTPOpcode::RRQ : TFTPOpcode::WRQ;
+     opcode = type == TFTPRequestType::Read ? TFTPOpcode::RRQ : TFTPOpcode::WRQ;
 }
 
 /* === Core Methods === */
