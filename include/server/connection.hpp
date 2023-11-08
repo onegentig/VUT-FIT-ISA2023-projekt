@@ -10,8 +10,7 @@
 #     define TFTP_CONNECTION_HPP
 
 #     include "common.hpp"
-#     include "packet/ErrorPacket.hpp"
-#     include "packet/RequestPacket.hpp"
+#     include "packet/PacketFactory.hpp"
 
 /**
  * @brief Enumeration to represent possible states of a connection
@@ -97,7 +96,7 @@ class TFTPServerConnection {
    protected:
      int fd;                            /**< Client socket file descriptor */
      struct sockaddr_in addr {};        /**< Address of the client */
-     std::string file_path;              /**< Path to the file */
+     std::string file_path;             /**< Path to the file */
      TFTPRequestType type;              /**< Request type (RRQ / WRQ) */
      TFTPDataFormat format;             /**< Transfer format */
      ConnectionState state;             /**< State of the connection */
