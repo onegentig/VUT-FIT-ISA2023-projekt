@@ -15,6 +15,7 @@
 #     include <thread>
 
 #     include "common.hpp"
+#     include "server/connection.hpp"
 
 /**
  * @brief Class for TFTP server.
@@ -70,13 +71,14 @@ class TFTPServer {
      void stop();
 
    private:
-     int fd;                               /**< Socket file descriptor */
-     int port;                             /**< Port to listen on */
-     std::string rootdir;                  /**< Root directory of the server */
-     std::atomic<bool> running;            /**< Server running flag */
-     struct sockaddr_in addr {};           /**< Socket address */
-     socklen_t addr_len = sizeof(addr);    /**< Socket address length */
-     std::vector<std::thread> connections; /**< Connection thread pool */
+     int fd;                            /**< Socket file descriptor */
+     int port;                          /**< Port to listen on */
+     std::string rootdir;               /**< Root directory of the server */
+     std::atomic<bool> running;         /**< Server running flag */
+     struct sockaddr_in addr {};        /**< Socket address */
+     socklen_t addr_len = sizeof(addr); /**< Socket address length */
+     std::vector<std::shared_ptr<TFTPServerConnection>>
+         connections; /**< Connection thread pool */
 
      /**
       * @brief Listens for incoming connections.
