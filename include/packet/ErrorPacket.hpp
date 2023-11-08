@@ -6,8 +6,8 @@
  */
 
 #pragma once
-#ifndef ERROR_PACKET_HPP
-#     define ERROR_PACKET_HPP
+#ifndef TFTP_ERROR_PACKET_HPP
+#     define TFTP_ERROR_PACKET_HPP
 #     include "packet/BasePacket.hpp"
 
 /**
@@ -62,7 +62,7 @@ class ErrorPacket : public BasePacket {
       *
       * @return std::vector<char> - packet in binary
       */
-     std::vector<char> toBinary() const override;
+     std::vector<char> to_binary() const override;
 
      /**
       * @brief Creates an ERROR packet from binary representation.
@@ -71,7 +71,7 @@ class ErrorPacket : public BasePacket {
       * @param std::vector<char> packet in binary
       * @return void
       */
-     void fromBinary(const std::vector<char>& binaryData) override;
+     void from_binary(const std::vector<char>& bin_data) override;
 
      /* === Getters and Setters === */
 
@@ -79,33 +79,33 @@ class ErrorPacket : public BasePacket {
       * @brief Returns the error code.
       * @return TFTPErrorCode
       */
-     TFTPErrorCode getErrcode() const { return this->errcode; }
+     TFTPErrorCode get_errcode() const { return this->errcode; }
 
      /**
       * @brief Sets the error code.
       * @param TFTPErrorCode errcode
       * @return void
       */
-     void setErrcode(TFTPErrorCode errcode) { this->errcode = errcode; }
+     void set_errcode(TFTPErrorCode errcode) { this->errcode = errcode; }
 
      /**
       * @brief Returns the error message.
       * @return std::optional<std::string>
       */
-     std::optional<std::string> getMessage() const { return this->msg; }
+     std::optional<std::string> get_message() const { return this->msg; }
 
      /**
       * @brief Sets the error message.
       * @param std::string msg
       * @return void
       */
-     void setMessage(const std::string& msg) { this->msg = msg; }
+     void set_message(const std::string& msg) { this->msg = msg; }
 
      /**
       * @brief Removes the error message.
       * @return void
       */
-     void removeMessage() { this->msg = std::nullopt; }
+     void remove_message() { this->msg = std::nullopt; }
 
    private:
      TFTPErrorCode errcode;          /**< Error code */

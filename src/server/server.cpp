@@ -18,7 +18,7 @@ TFTPServer::TFTPServer() : port(TFTP_PORT), rootdir("./") {
 TFTPServer::TFTPServer(std::string rootdir)
     : port(TFTP_PORT), rootdir(rootdir) {
      /* Verify root directory */
-     if (!this->validateDir())
+     if (!this->check_dir())
           throw std::runtime_error("Invalid root directory");
 
      this->running.store(false);
@@ -31,7 +31,7 @@ TFTPServer::TFTPServer(std::string rootdir, int port)
           throw std::runtime_error("Invalid port number");
 
      /* Verify root directory */
-     if (!this->validateDir())
+     if (!this->check_dir())
           throw std::runtime_error("Invalid root directory");
 
      this->running.store(false);
@@ -104,10 +104,10 @@ void TFTPServer::start() {
      }
 
      /* Listen */
-     connListen();
+     conn_listen();
 }
 
-void TFTPServer::connListen() {
+void TFTPServer::conn_listen() {
      this->running.store(true);
      std::cout << "==> Listening for connections..." << std::endl;
 
@@ -149,7 +149,7 @@ void TFTPServer::connListen() {
           // TODO: This part can be done more safely and elegantly
           RequestPacket reqPacket = RequestPacket();
           std::vector<char> buffer_vec(buffer.begin(), buffer.end());
-          reqPacket.fromBinary(buffer_vec);
+          reqPacket.from_binary(buffer_vec);
           auto conn = std::make_shared<TFTPServerConnection>(
               this->fd, c_addr, reqPacket, this->rootdir);
           this->connections.push_back(conn);
@@ -164,7 +164,7 @@ void TFTPServer::connListen() {
               std::remove_if(
                   connections.begin(), connections.end(),
                   [](const std::shared_ptr<TFTPServerConnection>& conn) {
-                       return !conn->isRunning();
+                       return !conn->is_running();
                   }),
               connections.end());
 
@@ -185,7 +185,7 @@ void TFTPServer::stop() {
 
 /* === Helper Methods === */
 
-bool TFTPServer::validateDir() const {
+bool TFTPServer::check_dir() const {
      struct stat sb;
 
      /** @see

@@ -6,8 +6,8 @@
  */
 
 #pragma once
-#ifndef REQUEST_PACKET_HPP
-#     define REQUEST_PACKET_HPP
+#ifndef TFTP_REQ_PACKET_HPP
+#     define TFTP_REQ_PACKET_HPP
 #     include "packet/BasePacket.hpp"
 
 /**
@@ -58,7 +58,7 @@ class RequestPacket : public BasePacket {
       *
       * @return std::vector<char> - packet in binary
       */
-     std::vector<char> toBinary() const override;
+     std::vector<char> to_binary() const override;
 
      /**
       * @brief Creates a RQ packet from binary representation.
@@ -68,7 +68,7 @@ class RequestPacket : public BasePacket {
       * @param std::vector<char> packet in binary
       * @return void
       */
-     void fromBinary(const std::vector<char>& binaryData) override;
+     void from_binary(const std::vector<char>& bin_data) override;
 
      /* === Getters and Setters === */
 
@@ -76,14 +76,14 @@ class RequestPacket : public BasePacket {
       * @brief Returns the filename.
       * @return std::string - filename
       */
-     std::string getFilename() const { return filename; }
+     std::string get_filename() const { return filename; }
 
      /**
       * @brief Sets the filename.
       * @param std::string filename
       * @return void
       */
-     void setFilename(std::string filename) {
+     void set_filename(std::string filename) {
           this->filename = std::move(filename);
      }
 
@@ -91,13 +91,13 @@ class RequestPacket : public BasePacket {
       * @brief Returns the transfer format mode.
       * @return TFTPDataFormat - mode
       */
-     TFTPDataFormat getMode() const { return mode; }
+     TFTPDataFormat get_mode() const { return mode; }
 
      /**
       * @brief Returns the mode (as string).
       * @return std::string - mode
       */
-     std::string getModeStr() const {
+     std::string get_mode_str() const {
           return mode == TFTPDataFormat::Octet ? "octet" : "netascii";
      }
 
@@ -106,14 +106,14 @@ class RequestPacket : public BasePacket {
       * @param TFTPDataFormat mode
       * @return void
       */
-     void setMode(TFTPDataFormat mode) { this->mode = mode; }
+     void set_mode(TFTPDataFormat mode) { this->mode = mode; }
 
      /**
       * @brief Sets the type (read || write)
       * @param TFTPRequestType type
       * @return void
       */
-     void setType(TFTPRequestType type) {
+     void set_type(TFTPRequestType type) {
           this->opcode = type == TFTPRequestType::Read ? TFTPOpcode::RRQ
                                                        : TFTPOpcode::WRQ;
      }
@@ -122,7 +122,7 @@ class RequestPacket : public BasePacket {
       * @brief Returns the type (read || write)
       * @return TFTPRequestType - type
       */
-     TFTPRequestType getType() const {
+     TFTPRequestType get_type() const {
           return opcode == TFTPOpcode::RRQ ? TFTPRequestType::Read
                                            : TFTPRequestType::Write;
      }

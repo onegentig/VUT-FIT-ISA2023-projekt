@@ -3,8 +3,8 @@
  * the TFTP protocol.
  */
 
-#ifndef CONST_HPP
-#define CONST_HPP
+#ifndef TFTP_CONSTS_HPP
+#define TFTP_CONSTS_HPP
 
 /* === Constants === */
 

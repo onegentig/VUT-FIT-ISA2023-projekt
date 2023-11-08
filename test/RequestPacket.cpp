@@ -12,46 +12,46 @@
 TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
      SECTION("Default constructor init") {
           RequestPacket rp;
-          REQUIRE(rp.getOpcode() == TFTPOpcode::RRQ);
-          REQUIRE(rp.getFilename() == "");
-          REQUIRE(rp.getMode() == TFTPDataFormat::Octet);
+          REQUIRE(rp.get_opcode() == TFTPOpcode::RRQ);
+          REQUIRE(rp.get_filename() == "");
+          REQUIRE(rp.get_mode() == TFTPDataFormat::Octet);
      }
 
      SECTION("Parametrised constructor init") {
           RequestPacket rp_read(TFTPRequestType::Read, "example.txt",
                                 TFTPDataFormat::Octet);
-          REQUIRE(rp_read.getOpcode() == TFTPOpcode::RRQ);
-          REQUIRE(rp_read.getFilename() == "example.txt");
-          REQUIRE(rp_read.getMode() == TFTPDataFormat::Octet);
+          REQUIRE(rp_read.get_opcode() == TFTPOpcode::RRQ);
+          REQUIRE(rp_read.get_filename() == "example.txt");
+          REQUIRE(rp_read.get_mode() == TFTPDataFormat::Octet);
 
           RequestPacket rp_write(TFTPRequestType::Write, "example.txt",
                                  TFTPDataFormat::Octet);
-          REQUIRE(rp_write.getOpcode() == TFTPOpcode::WRQ);
-          REQUIRE(rp_write.getFilename() == "example.txt");
-          REQUIRE(rp_write.getMode() == TFTPDataFormat::Octet);
+          REQUIRE(rp_write.get_opcode() == TFTPOpcode::WRQ);
+          REQUIRE(rp_write.get_filename() == "example.txt");
+          REQUIRE(rp_write.get_mode() == TFTPDataFormat::Octet);
           REQUIRE(rp_read != rp_write);
 
           RequestPacket rp_incomplete(TFTPRequestType::Read, "example.txt",
                                       TFTPDataFormat::NetASCII);
-          REQUIRE(rp_incomplete.getOpcode() == TFTPOpcode::RRQ);
-          REQUIRE(rp_incomplete.getFilename() == "example.txt");
-          REQUIRE(rp_incomplete.getMode() == TFTPDataFormat::NetASCII);
+          REQUIRE(rp_incomplete.get_opcode() == TFTPOpcode::RRQ);
+          REQUIRE(rp_incomplete.get_filename() == "example.txt");
+          REQUIRE(rp_incomplete.get_mode() == TFTPDataFormat::NetASCII);
      }
 
      SECTION("Setters and getters") {
           RequestPacket rp;
-          REQUIRE(rp.getFilename() == "");
-          REQUIRE(rp.getMode() == TFTPDataFormat::Octet);
+          REQUIRE(rp.get_filename() == "");
+          REQUIRE(rp.get_mode() == TFTPDataFormat::Octet);
 
-          rp.setType(TFTPRequestType::Read);
-          REQUIRE(rp.getOpcode() == TFTPOpcode::RRQ);
-          rp.setType(TFTPRequestType::Write);
-          REQUIRE(rp.getOpcode() == TFTPOpcode::WRQ);
+          rp.set_type(TFTPRequestType::Read);
+          REQUIRE(rp.get_opcode() == TFTPOpcode::RRQ);
+          rp.set_type(TFTPRequestType::Write);
+          REQUIRE(rp.get_opcode() == TFTPOpcode::WRQ);
 
-          rp.setFilename("test.txt");
-          REQUIRE(rp.getFilename() == "test.txt");
-          rp.setMode(TFTPDataFormat::NetASCII);
-          REQUIRE(rp.getMode() == TFTPDataFormat::NetASCII);
+          rp.set_filename("test.txt");
+          REQUIRE(rp.get_filename() == "test.txt");
+          rp.set_mode(TFTPDataFormat::NetASCII);
+          REQUIRE(rp.get_mode() == TFTPDataFormat::NetASCII);
      }
 
      SECTION("Serialisation and deserialisation") {
@@ -61,7 +61,7 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
                            TFTPDataFormat::Octet);
 
           // Packet -> Binary
-          std::vector<char> binary = rp.toBinary();
+          std::vector<char> binary = rp.to_binary();
           REQUIRE(binary[0] == 0x00);  // Opcode (HI)
           REQUIRE(binary[1] == 0x01);  // Opcode (LO)
           int offset = 2;
@@ -79,17 +79,17 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
 
           // Binary -> Packet
           RequestPacket rp2;
-          rp2.fromBinary(binary);
-          REQUIRE(rp2.getOpcode() == TFTPOpcode::RRQ);
-          REQUIRE(rp2.getFilename() == filename);
-          REQUIRE(rp2.getMode() == TFTPDataFormat::Octet);
-          REQUIRE(rp2.getModeStr() == mode);
+          rp2.from_binary(binary);
+          REQUIRE(rp2.get_opcode() == TFTPOpcode::RRQ);
+          REQUIRE(rp2.get_filename() == filename);
+          REQUIRE(rp2.get_mode() == TFTPDataFormat::Octet);
+          REQUIRE(rp2.get_mode_str() == mode);
           REQUIRE(rp == rp2);
      }
 
      SECTION("Empty serialisation") {
           RequestPacket rp;
-          std::vector<char> binary = rp.toBinary();
+          std::vector<char> binary = rp.to_binary();
           REQUIRE(binary.size() == 0);
      }
 }
