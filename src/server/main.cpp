@@ -6,7 +6,7 @@
  */
 
 #include "common.hpp"
-#include "server.hpp"
+#include "server/server.hpp"
 
 int main(int argc, char* argv[]) {
      std::string usage = "  Usage: tftp-server [-p port] <path>";

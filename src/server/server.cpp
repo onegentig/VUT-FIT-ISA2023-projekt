@@ -5,7 +5,7 @@
  * @date 2023-10-21
  */
 
-#include "server.hpp"
+#include "server/server.hpp"
 
 #include <fcntl.h>
 
