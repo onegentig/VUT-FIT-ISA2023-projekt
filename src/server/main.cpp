@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 
      /* Parse command line options */
      int opt;
-     int port = DEFAULT_TFTP_PORT;
+     int port = TFTP_PORT;
      std::string rootdir;
      while ((opt = getopt(argc, argv, "p:")) != -1) {
           switch (opt) {

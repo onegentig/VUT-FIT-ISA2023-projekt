@@ -41,14 +41,14 @@ std::vector<char> DataPacket::readFileData() const {
 
      /* Seek to file start (NetASCII) or block start (octet) */
      off_t startOffset
-         = mode == TFTPDataFormat::Octet ? (blockN - 1) * MAX_DATA_SIZE : 0;
+         = mode == TFTPDataFormat::Octet ? (blockN - 1) * TFTP_MAX_DATA : 0;
      if (lseek(fd, startOffset, SEEK_SET) == -1)
           throw std::runtime_error("Cannot seek to file start");
 
      /* Binary data can be directly cut and returned */
      if (mode == TFTPDataFormat::Octet) {
-          char data[MAX_DATA_SIZE];
-          ssize_t bytesRead = read(fd, data, MAX_DATA_SIZE);
+          char data[TFTP_MAX_DATA];
+          ssize_t bytesRead = read(fd, data, TFTP_MAX_DATA);
           if (bytesRead == -1)
                throw std::runtime_error("Could not read file (0 bytes read)");
 
@@ -58,10 +58,10 @@ std::vector<char> DataPacket::readFileData() const {
      /* NetASCII data must be properly encoded – for size adjustment, must be
       * converted from start */
      off_t totalBytesRead = 0;
-     off_t lastOffset = blockN * MAX_DATA_SIZE;
+     off_t lastOffset = blockN * TFTP_MAX_DATA;
      std::vector<char> buffer;
      while (totalBytesRead < lastOffset) {
-          std::vector<char> chunk(MAX_DATA_SIZE);
+          std::vector<char> chunk(TFTP_MAX_DATA);
           ssize_t bytesRead = read(fd, chunk.data(), chunk.size());
 
           if (bytesRead == -1) {
@@ -80,16 +80,16 @@ std::vector<char> DataPacket::readFileData() const {
      }
 
      /* Cut the last MAX_DATA_SIZE */
-     auto startIt = buffer.begin() + ((blockN - 1) * MAX_DATA_SIZE);
-     auto endIt = std::min(startIt + MAX_DATA_SIZE, buffer.end());
+     auto startIt = buffer.begin() + ((blockN - 1) * TFTP_MAX_DATA);
+     auto endIt = std::min(startIt + TFTP_MAX_DATA, buffer.end());
      return std::vector<char>(startIt, endIt);
 }
 
 std::vector<char> DataPacket::readData() const {
      /* Raw data – return cut block */
      if (!data.empty()) {
-          size_t start = (blockN - 1) * MAX_DATA_SIZE;
-          size_t end = blockN * MAX_DATA_SIZE;
+          size_t start = (blockN - 1) * TFTP_MAX_DATA;
+          size_t end = blockN * TFTP_MAX_DATA;
           if (end > data.size()) end = data.size();
           return std::vector<char>(data.begin() + start, data.begin() + end);
      }

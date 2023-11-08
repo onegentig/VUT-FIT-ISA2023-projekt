@@ -11,28 +11,28 @@
 /**
  * @brief Maximum size of a TFTP data packet data block.
  */
-static const size_t MAX_DATA_SIZE = 512;
+static const size_t TFTP_MAX_DATA = 512;
 
 /**
  * @brief Maximum size of a TFTP packet.
  */
-static const size_t MAX_PACKET_SIZE = MAX_DATA_SIZE + 4;
+static const size_t TFTP_MAX_PACKET = TFTP_MAX_DATA + 4;
 
 /**
  * @brief Default TFTP port
  * @see https://datatracker.ietf.org/doc/html/rfc1350#section-4
  */
-static const uint16_t DEFAULT_TFTP_PORT = 69;
+static const uint16_t TFTP_PORT = 69;
 
 /**
  * @brief Timeout for the TFTP server in seconds.
  */
-static const int TIMEOUT = 4;
+static const int TFTP_TIMEO = 4;
 
 /**
  * @brief Short delay for the handling loop in miliseconds.
  */
-static const int THREAD_DELAY = 100;
+static const int TFTP_THREAD_DELAY = 100;
 
 /* === Enumerations === */
 

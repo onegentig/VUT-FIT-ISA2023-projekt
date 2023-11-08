@@ -26,7 +26,7 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(dp_raw.getFd() == -1);
           REQUIRE(dp_raw.getBlockNumber() == 1);
           REQUIRE(dp_raw.getData().size() == 1023);
-          REQUIRE(dp_raw.readData().size() == MAX_DATA_SIZE);
+          REQUIRE(dp_raw.readData().size() == TFTP_MAX_DATA);
           REQUIRE(dp_raw.getMode() == TFTPDataFormat::Octet);
 
           /* File descriptor */
@@ -66,7 +66,7 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
 
           dp.setData(std::vector<char>(1023, 0x01));
           REQUIRE(dp.getData().size() == 1023);
-          REQUIRE(dp.readData().size() == MAX_DATA_SIZE);
+          REQUIRE(dp.readData().size() == TFTP_MAX_DATA);
           dp.setData(std::vector<char>());
           REQUIRE(dp.getData().empty());
           REQUIRE(dp.getData().size() == 0);
