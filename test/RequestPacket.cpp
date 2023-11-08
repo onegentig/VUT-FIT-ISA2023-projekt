@@ -78,8 +78,7 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
           REQUIRE(binary[offset] == 0x00);  // Terminator
 
           // Binary -> Packet
-          RequestPacket rp2;
-          rp2.from_binary(binary);
+          RequestPacket rp2 = RequestPacket::from_binary(binary);
           REQUIRE(rp2.get_opcode() == TFTPOpcode::RRQ);
           REQUIRE(rp2.get_filename() == filename);
           REQUIRE(rp2.get_mode() == TFTPDataFormat::Octet);

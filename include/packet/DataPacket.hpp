@@ -104,9 +104,9 @@ class DataPacket : public BasePacket {
       * @note Prefer to use `from_binary()` with mode parameter.
       *
       * @param std::vector<char> packet in binary
-      * @return void
+      * @return DataPacket
       */
-     void from_binary(const std::vector<char>& bin_data) override;
+     static DataPacket from_binary(const std::vector<char>& bin_data);
 
      /**
       * @brief Creates a new DATA packet from a binary representation (with
@@ -115,9 +115,10 @@ class DataPacket : public BasePacket {
       *
       * @param std::vector<char> packet in binary
       * @param TFTPDataFormat mode
-      * @return void
+      * @return DataPacket
       */
-     void from_binary(const std::vector<char>& bin_data, TFTPDataFormat mode);
+     static DataPacket from_binary(const std::vector<char>& bin_data,
+                                   TFTPDataFormat mode);
 
      /* === Getters and Setters === */
 
@@ -186,7 +187,7 @@ class DataPacket : public BasePacket {
 
    private:
      int fd = -1;                                 /**< File descriptor */
-     uint16_t block_n;                             /**< Block number */
+     uint16_t block_n;                            /**< Block number */
      std::vector<char> data;                      /**< Binary data */
      TFTPDataFormat mode = TFTPDataFormat::Octet; /**< Transfer format mode */
 };

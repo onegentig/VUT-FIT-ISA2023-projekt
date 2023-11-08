@@ -51,8 +51,8 @@ TEST_CASE("Acknowledgement Packet Functionality", "[packet_rrq]") {
           REQUIRE(blockN_bin == block_n);
 
           // Binary -> Packet
-          AcknowledgementPacket ap2;
-          ap2.from_binary(binary);
+          AcknowledgementPacket ap2
+              = AcknowledgementPacket::from_binary(binary);
           REQUIRE(ap2.get_opcode() == TFTPOpcode::ACK);
           REQUIRE(ap2.get_block_number() == block_n);
           REQUIRE(ap == ap2);

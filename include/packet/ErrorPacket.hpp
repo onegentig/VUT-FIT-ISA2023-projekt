@@ -69,9 +69,9 @@ class ErrorPacket : public BasePacket {
       * @throws std::invalid_argument when vector is not a proper ERROR packet
       *
       * @param std::vector<char> packet in binary
-      * @return void
+      * @return ErrorPacket
       */
-     void from_binary(const std::vector<char>& bin_data) override;
+     static ErrorPacket from_binary(const std::vector<char>& bin_data);
 
      /* === Getters and Setters === */
 
