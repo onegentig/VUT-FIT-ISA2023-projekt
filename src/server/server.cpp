@@ -51,6 +51,8 @@ void TFTPServer::start() {
           return;
      }
 
+     std::cout << "  Socket created" << std::endl;
+
      /* Set up address */
      memset(&(this->addr), 0, this->addr_len);
      this->addr.sin_family = AF_INET;
@@ -86,6 +88,9 @@ void TFTPServer::start() {
           return;
      }
 
+     std::cout << "  Socket bound to " << inet_ntoa(this->addr.sin_addr) << ":"
+               << ntohs(this->addr.sin_port) << std::endl;
+
      /* Make the listening socket non-blocking */
      int flags = fcntl(this->fd, F_GETFL, 0);
      if (flags < 0) {
@@ -104,25 +109,24 @@ void TFTPServer::start() {
 
 void TFTPServer::connListen() {
      this->running.store(true);
-     std::cout << "TFTP server listening on port " << this->port << std::endl;
-
-     // TODO: This logic should be moved to the loop below
-     struct sockaddr_in c_addr {};
-     socklen_t c_addr_len = sizeof(c_addr);
-     std::array<uint8_t, TFTP_MAX_PACKET> buffer{0};
+     std::cout << "==> Listening for connections..." << std::endl;
 
      /** @see
       * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=23
       */
      while (this->running.load()) {
-          // TODO: All this is just a "for now" thing for testing and all that
+          struct sockaddr_in c_addr {};
+          socklen_t c_addr_len = sizeof(c_addr);
+          std::array<char, TFTP_MAX_PACKET> buffer{0};
           memset(buffer.data(), 0, buffer.size());
           memset(&c_addr, 0, c_addr_len);
 
+          /* Recieve message */
           ssize_t read_size = recvfrom(
               this->fd, buffer.data(), TFTP_MAX_PACKET, 0,
               reinterpret_cast<struct sockaddr*>(&c_addr), &c_addr_len);
 
+          /* Handle errors */
           if (read_size < 0) {
                if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     /* No new connections */
@@ -131,14 +135,38 @@ void TFTPServer::connListen() {
                     continue;
                }
 
-               std::cerr << "Failed to receive data: " << strerror(errno)
+               std::cerr << "!ERR! Failed to receive data: " << strerror(errno)
                          << std::endl;
                continue;
           }
 
+          /* Log (remove this afterwards) */
           std::cout << "Received " << read_size << " bytes from "
                     << inet_ntoa(c_addr.sin_addr) << ":"
                     << ntohs(c_addr.sin_port) << std::endl;
+
+          /* Instantiate connection instance */
+          // TODO: This part can be done more safely and elegantly
+          RequestPacket reqPacket = RequestPacket();
+          std::vector<char> buffer_vec(buffer.begin(), buffer.end());
+          reqPacket.fromBinary(buffer_vec);
+          auto conn = std::make_shared<TFTPServerConnection>(
+              this->fd, c_addr, reqPacket, this->rootdir);
+          this->connections.push_back(conn);
+
+          /* Execute connection in a separate thread */
+          std::thread tConn(&TFTPServerConnection::run, conn);
+          tConn.detach();
+
+          /* Check for and remove closed connections */
+          // @see: https://stackoverflow.com/a/39019851
+          connections.erase(
+              std::remove_if(
+                  connections.begin(), connections.end(),
+                  [](const std::shared_ptr<TFTPServerConnection>& conn) {
+                       return !conn->isRunning();
+                  }),
+              connections.end());
 
           /* Short sleep (makes the loop a bit less CPU-heavy) */
           std::this_thread::sleep_for(
