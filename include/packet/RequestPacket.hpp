@@ -66,9 +66,9 @@ class RequestPacket : public BasePacket {
       * @throws std::invalid_argument when vector is not a proper RQ packet
       *
       * @param std::vector<char> packet in binary
-      * @return void
+      * @return RequestPacket
       */
-     void from_binary(const std::vector<char>& bin_data) override;
+     static RequestPacket from_binary(const std::vector<char>& bin_data);
 
      /* === Getters and Setters === */
 

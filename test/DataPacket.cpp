@@ -139,8 +139,8 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
                   == 8);  // 2 (op) + 2 (block) + 4 (data incl. \0)
 
           // Binary -> Packet
-          DataPacket dp2;
-          dp2.from_binary(binary, TFTPDataFormat::NetASCII);
+          DataPacket dp2
+              = DataPacket::from_binary(binary, TFTPDataFormat::NetASCII);
           REQUIRE(dp2.get_opcode() == TFTPOpcode::DATA);
           REQUIRE(dp2.get_block_number() == 1);
           REQUIRE(dp2.get_data().size() == 4);

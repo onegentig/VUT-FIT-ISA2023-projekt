@@ -57,8 +57,7 @@ TEST_CASE("Error Packet Functionality", "[packet_rrq]") {
           REQUIRE(msgBin == "I can't take it anymore");  // Message
 
           // Binary -> Packet
-          ErrorPacket ep2;
-          ep2.from_binary(binary);
+          ErrorPacket ep2 = ErrorPacket::from_binary(binary);
           REQUIRE(ep2.get_opcode() == TFTPOpcode::ERROR);
           REQUIRE(ep2.get_errcode() == TFTPErrorCode::DiskFull);
           REQUIRE(ep2.get_message() == "I can't take it anymore");

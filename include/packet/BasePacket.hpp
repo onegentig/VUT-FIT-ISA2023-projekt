@@ -29,13 +29,6 @@ class BasePacket {
      virtual std::vector<char> to_binary() const = 0;
 
      /**
-      * @brief Creates a packet from a binary representation.
-      * @param std::vector<char> binary representation of the packet
-      * @return void
-      */
-     virtual void from_binary(const std::vector<char>&) = 0;
-
-     /**
       * @brief Compares and checks equality of two BasePacket objects.
       * @param other BasePacket object
       * @return true when equal, otherwise false

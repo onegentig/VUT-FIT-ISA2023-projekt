@@ -105,47 +105,49 @@ std::vector<char> DataPacket::to_binary() const {
      std::vector<char> filedata = read_data();
      if (filedata.empty()) return std::vector<char>();
      size_t length = 2 /* opcode */ + 2 /* block number */ + filedata.size();
-     std::vector<char> binaryData(length);
+     std::vector<char> bin_data(length);
 
      /* Convert and copy opcode & block_n in network byte order */
      uint16_t opcode = htons(static_cast<uint16_t>(this->opcode));
      uint16_t block_n = htons(this->block_n);
-     std::memcpy(binaryData.data(), &opcode, sizeof(opcode));
-     std::memcpy(binaryData.data() + 2, &block_n, sizeof(block_n));
+     std::memcpy(bin_data.data(), &opcode, sizeof(opcode));
+     std::memcpy(bin_data.data() + 2, &block_n, sizeof(block_n));
 
      /* Insert data to vector */
      size_t offset = 4;  // after 2B opcode + 2B block number
-     std::memcpy(binaryData.data() + offset, filedata.data(), filedata.size());
+     std::memcpy(bin_data.data() + offset, filedata.data(), filedata.size());
 
-     return binaryData;
+     return bin_data;
 }
 
-void DataPacket::from_binary(const std::vector<char>& binaryData) {
-     return from_binary(binaryData, TFTPDataFormat::Octet);
+DataPacket DataPacket::from_binary(const std::vector<char>& bin_data) {
+     return from_binary(bin_data, TFTPDataFormat::Octet);
 }
 
-void DataPacket::from_binary(const std::vector<char>& binaryData,
-                            TFTPDataFormat mode) {
-     if (binaryData.size()
-         < 4)  // Min. size is 4B (2B opcode + 2B block number)
+DataPacket DataPacket::from_binary(const std::vector<char>& bin_data,
+                                   TFTPDataFormat mode) {
+     if (bin_data.size() < 4)  // Min. size is 4B (2B opcode + 2B block number)
           throw std::invalid_argument("Incorrect packet size");
 
      /* Obtain and validate opcode */
      uint16_t opcode;
-     std::memcpy(&opcode, binaryData.data(), sizeof(opcode));
+     std::memcpy(&opcode, bin_data.data(), sizeof(opcode));
      opcode = ntohs(opcode);
 
      if (opcode != static_cast<uint16_t>(TFTPOpcode::DATA))
           throw std::invalid_argument("Incorrect opcode");
 
-     this->opcode = static_cast<TFTPOpcode>(opcode);
-
      /* Obtain and validate block number */
-     std::memcpy(&block_n, binaryData.data() + 2, sizeof(block_n));
+     uint16_t block_n;
+     std::memcpy(&block_n, bin_data.data() + 2, sizeof(block_n));
      block_n = ntohs(block_n);
 
      /* Obtain data */
-     this->mode = mode;
      size_t offset = 4;  // after 2B opcode + 2B block number
-     data = std::vector<char>(binaryData.begin() + offset, binaryData.end());
+     std::vector<char> data
+         = std::vector<char>(bin_data.begin() + offset, bin_data.end());
+
+     DataPacket packet = DataPacket(data, block_n);
+     packet.set_mode(mode);
+     return packet;
 }
