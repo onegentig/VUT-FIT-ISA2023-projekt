@@ -11,14 +11,6 @@
 #     include "packet/BasePacket.hpp"
 
 /**
- * @brief Enumeration of the request packet types.
- */
-enum RequestPacketType {
-     Read = 0, /**< Read request */
-     Write = 1 /**< Write request */
-};
-
-/**
  * @brief TFTP request packet class.
  * Represents the RRQ (opcode 1) and WRQ (opcode 2) packet that establishes the
  * connection. These packets should be sent to port 69 instead of the generated
@@ -36,12 +28,12 @@ class RequestPacket : public BasePacket {
 
      /**
       * @brief Constructs a new RQ packet object with set parameters.
-      * @param RequestPacketType type
+      * @param TFTPRequestType type
       * @param std::string filename
       * @param TFTPDataFormat mode
       * @return RequestPacket
       */
-     explicit RequestPacket(RequestPacketType type, std::string filename,
+     explicit RequestPacket(TFTPRequestType type, std::string filename,
                             TFTPDataFormat mode);
 
      /**
@@ -118,12 +110,21 @@ class RequestPacket : public BasePacket {
 
      /**
       * @brief Sets the type (read || write)
-      * @param RequestPacketType type
+      * @param TFTPRequestType type
       * @return void
       */
-     void setType(RequestPacketType type) {
-          this->opcode = type == RequestPacketType::Read ? TFTPOpcode::RRQ
-                                                         : TFTPOpcode::WRQ;
+     void setType(TFTPRequestType type) {
+          this->opcode = type == TFTPRequestType::Read ? TFTPOpcode::RRQ
+                                                       : TFTPOpcode::WRQ;
+     }
+
+     /**
+      * @brief Returns the type (read || write)
+      * @return TFTPRequestType - type
+      */
+     TFTPRequestType getType() const {
+          return opcode == TFTPOpcode::RRQ ? TFTPRequestType::Read
+                                           : TFTPRequestType::Write;
      }
 
    private:

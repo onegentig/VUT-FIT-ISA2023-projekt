@@ -18,20 +18,20 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
      }
 
      SECTION("Parametrised constructor init") {
-          RequestPacket rp_read(RequestPacketType::Read, "example.txt",
+          RequestPacket rp_read(TFTPRequestType::Read, "example.txt",
                                 TFTPDataFormat::Octet);
           REQUIRE(rp_read.getOpcode() == TFTPOpcode::RRQ);
           REQUIRE(rp_read.getFilename() == "example.txt");
           REQUIRE(rp_read.getMode() == TFTPDataFormat::Octet);
 
-          RequestPacket rp_write(RequestPacketType::Write, "example.txt",
+          RequestPacket rp_write(TFTPRequestType::Write, "example.txt",
                                  TFTPDataFormat::Octet);
           REQUIRE(rp_write.getOpcode() == TFTPOpcode::WRQ);
           REQUIRE(rp_write.getFilename() == "example.txt");
           REQUIRE(rp_write.getMode() == TFTPDataFormat::Octet);
           REQUIRE(rp_read != rp_write);
 
-          RequestPacket rp_incomplete(RequestPacketType::Read, "example.txt",
+          RequestPacket rp_incomplete(TFTPRequestType::Read, "example.txt",
                                       TFTPDataFormat::NetASCII);
           REQUIRE(rp_incomplete.getOpcode() == TFTPOpcode::RRQ);
           REQUIRE(rp_incomplete.getFilename() == "example.txt");
@@ -43,9 +43,9 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
           REQUIRE(rp.getFilename() == "");
           REQUIRE(rp.getMode() == TFTPDataFormat::Octet);
 
-          rp.setType(RequestPacketType::Read);
+          rp.setType(TFTPRequestType::Read);
           REQUIRE(rp.getOpcode() == TFTPOpcode::RRQ);
-          rp.setType(RequestPacketType::Write);
+          rp.setType(TFTPRequestType::Write);
           REQUIRE(rp.getOpcode() == TFTPOpcode::WRQ);
 
           rp.setFilename("test.txt");
@@ -57,7 +57,7 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
      SECTION("Serialisation and deserialisation") {
           std::string filename = "example.txt";
           std::string mode = "octet";
-          RequestPacket rp(RequestPacketType::Read, filename,
+          RequestPacket rp(TFTPRequestType::Read, filename,
                            TFTPDataFormat::Octet);
 
           // Packet -> Binary

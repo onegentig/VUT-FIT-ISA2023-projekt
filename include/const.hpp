@@ -65,6 +65,14 @@ enum TFTPErrorCode : uint16_t {
 };
 
 /**
+ * @brief Enumeration of the request packet types.
+ */
+enum TFTPRequestType {
+     Read = 0, /**< Read request */
+     Write = 1 /**< Write request */
+};
+
+/**
  * @brief Enumeration of the data packet modes.
  */
 enum TFTPDataFormat {
