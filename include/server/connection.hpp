@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#ifndef TFTErrorCTION_HPP
+#ifndef TFTP_CONNECTION_HPP
 #     define TFTP_CONNECTION_HPP
 
 #     include "common.hpp"
@@ -35,12 +35,12 @@ class TFTPServerConnection {
       * @brief Constructs a new TFTPServerConnection object
       * @param fd Client socket file descriptor
       * @param addr Client address
-      * @param reqPacket Request packet (RRQ / WRQ)
-      * @param rootDir Server root directory
+      * @param req_packet Request packet (RRQ / WRQ)
+      * @param root_dir Server root directory
       */
      TFTPServerConnection(int fd, const sockaddr_in& addr,
-                          const RequestPacket& reqPacket,
-                          const std::string& rootDir);
+                          const RequestPacket& req_packet,
+                          const std::string& root_dir);
 
      /**
       * @brief Destroys the TFTPServerConnection object
@@ -64,7 +64,7 @@ class TFTPServerConnection {
       * @return true if running
       * @return false otherwise
       */
-     bool isRunning() const {
+     bool is_running() const {
           return this->state != ConnectionState::COMPLETED
                  && this->state != ConnectionState::DENIED
                  && this->state != ConnectionState::ERRORED;
@@ -75,7 +75,7 @@ class TFTPServerConnection {
       * @return true if transfering
       * @return false otherwise
       */
-     bool isTransfering() const {
+     bool is_transfering() const {
           return this->state == ConnectionState::READING
                  || this->state == ConnectionState::WRITING;
      }
@@ -85,19 +85,19 @@ class TFTPServerConnection {
       * @return true if upload
       * @return false otherwise
       */
-     bool isUpload() const { return this->type == TFTPRequestType::Read; }
+     bool is_upload() const { return this->type == TFTPRequestType::Read; }
 
      /**
       * @brief Checks if the connection is a download (write to server)
       * @return true if download
       * @return false otherwise
       */
-     bool isDownload() const { return this->type == TFTPRequestType::Write; }
+     bool is_download() const { return this->type == TFTPRequestType::Write; }
 
    protected:
      int fd;                            /**< Client socket file descriptor */
      struct sockaddr_in addr {};        /**< Address of the client */
-     std::string filePath;              /**< Path to the file */
+     std::string file_path;              /**< Path to the file */
      TFTPRequestType type;              /**< Request type (RRQ / WRQ) */
      TFTPDataFormat format;             /**< Transfer format */
      ConnectionState state;             /**< State of the connection */

@@ -6,8 +6,8 @@
  */
 
 #pragma once
-#ifndef BASE_PACKET_HPP
-#     define BASE_PACKET_HPP
+#ifndef TFTP_BASE_PACKET_HPP
+#     define TFTP_BASE_PACKET_HPP
 #     include <iomanip>
 
 #     include "common.hpp"
@@ -26,14 +26,14 @@ class BasePacket {
       * @brief Returns the binary representation of the packet.
       * @return std::vector<char> - binary representation of the packet
       */
-     virtual std::vector<char> toBinary() const = 0;
+     virtual std::vector<char> to_binary() const = 0;
 
      /**
       * @brief Creates a packet from a binary representation.
       * @param std::vector<char> binary representation of the packet
       * @return void
       */
-     virtual void fromBinary(const std::vector<char>&) = 0;
+     virtual void from_binary(const std::vector<char>&) = 0;
 
      /**
       * @brief Compares and checks equality of two BasePacket objects.
@@ -54,16 +54,16 @@ class BasePacket {
       * @return size_t - position of the next character after the null
       * terminator
       */
-     static inline size_t findcstr(const std::vector<char>& binaryData,
+     static inline size_t findcstr(const std::vector<char>& bin_data,
                                    size_t offset, std::string& result) {
           /* Search for a null terminator */
           size_t end = offset;
-          while (end < binaryData.size() && binaryData[end] != 0) ++end;
+          while (end < bin_data.size() && bin_data[end] != 0) ++end;
 
-          if (end >= binaryData.size())  // No null-terminator found
+          if (end >= bin_data.size())  // No null-terminator found
                throw std::invalid_argument("Invalid payload");
 
-          result.assign(binaryData.begin() + offset, binaryData.begin() + end);
+          result.assign(bin_data.begin() + offset, bin_data.begin() + end);
           return end + 1;  // Position of the next character after the null
                            // terminator
      }
@@ -76,7 +76,7 @@ class BasePacket {
       * @param std::vector<char> binary data
       * @return std::vector<char> NetASCII data
       */
-     static std::vector<char> toNetascii(const std::vector<char>& data) {
+     static std::vector<char> to_netascii(const std::vector<char>& data) {
           std::vector<char> netasciiData;
           for (uint64_t i = 0; i < data.size(); i++) {
                if (data[i] == '\n') {
@@ -115,33 +115,33 @@ class BasePacket {
       * @param std::vector<char> NetASCII data
       * @return std::vector<char> Native binary data
       */
-     static std::vector<char> fromNetascii(const std::vector<char>& data) {
-          std::vector<char> binaryData;
+     static std::vector<char> from_netascii(const std::vector<char>& data) {
+          std::vector<char> bin_data;
           for (uint64_t i = 0; i < data.size(); i++) {
                if (data[i] == '\r') {
                     if (i + 1 < data.size() && data[i + 1] == '\n') {
                          // CR LF -> LF
-                         binaryData.push_back('\n');
+                         bin_data.push_back('\n');
                          i++;
                     } else if (i + 1 < data.size() && data[i + 1] == '\0') {
                          // CR NUL -> CR
-                         binaryData.push_back('\r');
+                         bin_data.push_back('\r');
                          i++;
                     } else {
                          // CR -> CR
-                         binaryData.push_back('\r');
+                         bin_data.push_back('\r');
                     }
                } else {
                     // Regular character
-                    binaryData.push_back(data[i]);
+                    bin_data.push_back(data[i]);
                }
           }
 
           // Remove null terminator
-          if (binaryData.size() > 0 && binaryData.back() == '\0')
-               binaryData.pop_back();
+          if (bin_data.size() > 0 && bin_data.back() == '\0')
+               bin_data.pop_back();
 
-          return binaryData;
+          return bin_data;
      }
 
      /* === Getters and Setters === */
@@ -150,7 +150,7 @@ class BasePacket {
       * @brief Returns the two-byte opcode of the packet.
       * @return TFTPOpcode - packet opcode
       */
-     TFTPOpcode getOpcode() const { return this->opcode; }
+     TFTPOpcode get_opcode() const { return this->opcode; }
 
      /* === Debugging Methods === */
 
@@ -161,7 +161,7 @@ class BasePacket {
      std::string hexdump() const {
           std::ostringstream stream;
 
-          auto bin = toBinary();
+          auto bin = to_binary();
           for (size_t i = 0; i < bin.size(); ++i) {
                stream << std::hex << std::setw(2) << std::setfill('0')
                       << static_cast<int>(bin[i]) << " ";

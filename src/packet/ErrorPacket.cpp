@@ -24,7 +24,7 @@ ErrorPacket::ErrorPacket(TFTPErrorCode errcode, std::string msg)
 
 /* === Core Methods === */
 
-std::vector<char> ErrorPacket::toBinary() const {
+std::vector<char> ErrorPacket::to_binary() const {
      std::vector<char> binaryData(4);  // 2B opcode + 2B errcode
 
      /* Convert and copy opcode and error code in network byte order */
@@ -35,7 +35,7 @@ std::vector<char> ErrorPacket::toBinary() const {
 
      /* Insert error message to vector */
      if (msg.has_value()) {
-          std::vector<char> msgBin = BasePacket::toNetascii(
+          std::vector<char> msgBin = BasePacket::to_netascii(
               std::vector<char>(msg.value().begin(), msg.value().end()));
           binaryData.insert(binaryData.end(), msgBin.begin(), msgBin.end());
      } else {
@@ -45,7 +45,7 @@ std::vector<char> ErrorPacket::toBinary() const {
      return binaryData;
 }
 
-void ErrorPacket::fromBinary(const std::vector<char>& binaryData) {
+void ErrorPacket::from_binary(const std::vector<char>& binaryData) {
      if (binaryData.size() < 4)  // Min. size is 4B (2B opcode + 2B errcode)
           throw std::invalid_argument("Incorrect packet size");
 
@@ -68,7 +68,7 @@ void ErrorPacket::fromBinary(const std::vector<char>& binaryData) {
      if (binaryData.size() > 5) {
           std::string msgStr;
           std::vector<char> msgBin(binaryData.begin() + 4, binaryData.end());
-          msgBin = BasePacket::fromNetascii(msgBin);
+          msgBin = BasePacket::from_netascii(msgBin);
           msgStr = std::string(msgBin.begin(), msgBin.end());
           this->msg = msgStr;
      }

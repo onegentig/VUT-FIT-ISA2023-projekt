@@ -23,14 +23,14 @@ RequestPacket::RequestPacket(TFTPRequestType type, std::string filename,
 
 /* === Core Methods === */
 
-std::vector<char> RequestPacket::toBinary() const {
+std::vector<char> RequestPacket::to_binary() const {
      /* If filename is not set, return an empty vector */
      if (filename.empty()) return std::vector<char>();
 
-     std::string modeStr = this->getModeStr();
-     std::vector<char> filenameBin = BasePacket::toNetascii(
+     std::string modeStr = this->get_mode_str();
+     std::vector<char> filenameBin = BasePacket::to_netascii(
          std::vector<char>(filename.begin(), filename.end()));
-     std::vector<char> modeBin = BasePacket::toNetascii(
+     std::vector<char> modeBin = BasePacket::to_netascii(
          std::vector<char>(modeStr.begin(), modeStr.end()));
 
      size_t length = 2 /* opcode */ + filenameBin.size()
@@ -51,7 +51,7 @@ std::vector<char> RequestPacket::toBinary() const {
      return binaryData;
 }
 
-void RequestPacket::fromBinary(const std::vector<char>& binaryData) {
+void RequestPacket::from_binary(const std::vector<char>& binaryData) {
      if (binaryData.size() < 4)  // Min. size is 4B (2B opcode + 2B separator)
           throw std::invalid_argument("Incorrect packet size");
 

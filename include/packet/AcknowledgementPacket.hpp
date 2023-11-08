@@ -6,8 +6,8 @@
  */
 
 #pragma once
-#ifndef ACKNOWLEDGEMENT_PACKET_HPP
-#     define ACKNOWLEDGEMENT_PACKET_HPP
+#ifndef TFTP_ACK_PACKET_HPP
+#     define TFTP_ACK_PACKET_HPP
 #     include "packet/BasePacket.hpp"
 
 /**
@@ -33,7 +33,7 @@ class AcknowledgementPacket : public BasePacket {
       * @param uint16_t block number
       * @return AcknowledgementPacket
       */
-     explicit AcknowledgementPacket(uint16_t blockN);
+     explicit AcknowledgementPacket(uint16_t block_n);
 
      /**
       * @brief Checks equality of two ACK packets.
@@ -42,7 +42,7 @@ class AcknowledgementPacket : public BasePacket {
       * @return false when not equal
       */
      bool operator==(const AcknowledgementPacket& other) const {
-          return this->opcode == other.opcode && this->blockN == other.blockN;
+          return this->opcode == other.opcode && this->block_n == other.block_n;
      }
 
      /* === Core Methods === */
@@ -55,7 +55,7 @@ class AcknowledgementPacket : public BasePacket {
       *
       * @return std::vector<char> - packet in binary
       */
-     std::vector<char> toBinary() const override;
+     std::vector<char> to_binary() const override;
 
      /**
       * @brief Creates an ACK packet from a binary representation.
@@ -65,7 +65,7 @@ class AcknowledgementPacket : public BasePacket {
       * @param std::vector<char> packet in binary
       * @return void
       */
-     void fromBinary(const std::vector<char>& binaryData) override;
+     void from_binary(const std::vector<char>& bin_data) override;
 
      /* === Getters and Setters === */
 
@@ -73,17 +73,17 @@ class AcknowledgementPacket : public BasePacket {
       * @brief Returns the two-byte block number.
       * @return uint16_t - block number
       */
-     uint16_t getBlockNumber() const { return blockN; }
+     uint16_t get_block_number() const { return block_n; }
 
      /**
       * @brief Sets the two-byte block number.
       * @param uint16_t block number
       * @return void
       */
-     void setBlockNumber(uint16_t blockN) { this->blockN = blockN; }
+     void set_block_number(uint16_t block_n) { this->block_n = block_n; }
 
    private:
-     uint16_t blockN; /**< Two-byte block number. */
+     uint16_t block_n; /**< Two-byte block number. */
 };
 
 #endif

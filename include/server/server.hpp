@@ -83,7 +83,7 @@ class TFTPServer {
      /**
       * @brief Listens for incoming connections.
       */
-     void connListen();
+     void conn_listen();
 
      /**
       * @brief Validates the rootdir (must be a readable
@@ -91,7 +91,7 @@ class TFTPServer {
       * @return true when valid,
       * @return false otherwise
       */
-     bool validateDir() const;
+     bool check_dir() const;
 };
 
 #endif

@@ -3,8 +3,8 @@
  * the standard library and some constants.
  */
 
-#ifndef COMMON_HPP
-#define COMMON_HPP
+#ifndef TFTP_COMMON_HPP
+#define TFTP_COMMON_HPP
 
 #include <arpa/inet.h>
 #include <sys/types.h>

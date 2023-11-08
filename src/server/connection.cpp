@@ -28,9 +28,9 @@ TFTPServerConnection::TFTPServerConnection(int fd, const sockaddr_in& addr,
      }
 
      /* Fill out remaining attributes */
-     filePath = rootDir + reqPacket.getFilename();
-     type = reqPacket.getType();
-     format = reqPacket.getMode();
+     file_path = rootDir + reqPacket.get_filename();
+     type = reqPacket.get_type();
+     format = reqPacket.get_mode();
 }
 
 TFTPServerConnection::~TFTPServerConnection() {
@@ -46,7 +46,7 @@ void TFTPServerConnection::run() {
      // TODO: implement
      ErrorPacket res
          = ErrorPacket(TFTPErrorCode::Unknown, "Response not implemented");
-     auto payload = res.toBinary();
+     auto payload = res.to_binary();
 
      if (sendto(this->fd, payload.data(), payload.size(), 0,
                 reinterpret_cast<const sockaddr*>(&this->addr),

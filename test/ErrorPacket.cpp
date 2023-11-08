@@ -12,41 +12,41 @@
 TEST_CASE("Error Packet Functionality", "[packet_rrq]") {
      SECTION("Default constructor init") {
           ErrorPacket ep;
-          REQUIRE(ep.getOpcode() == TFTPOpcode::ERROR);
-          REQUIRE(ep.getErrcode() == TFTPErrorCode::Unknown);
-          REQUIRE(ep.getMessage() == std::nullopt);
+          REQUIRE(ep.get_opcode() == TFTPOpcode::ERROR);
+          REQUIRE(ep.get_errcode() == TFTPErrorCode::Unknown);
+          REQUIRE(ep.get_message() == std::nullopt);
      }
 
      SECTION("Parametrised constructor init") {
           ErrorPacket ep(TFTPErrorCode::FileNotFound, "File not found");
-          REQUIRE(ep.getOpcode() == TFTPOpcode::ERROR);
-          REQUIRE(ep.getErrcode() == TFTPErrorCode::FileNotFound);
-          REQUIRE(ep.getMessage() == "File not found");
+          REQUIRE(ep.get_opcode() == TFTPOpcode::ERROR);
+          REQUIRE(ep.get_errcode() == TFTPErrorCode::FileNotFound);
+          REQUIRE(ep.get_message() == "File not found");
 
           ErrorPacket ep2(TFTPErrorCode::IllegalOperation);
-          REQUIRE(ep2.getOpcode() == TFTPOpcode::ERROR);
-          REQUIRE(ep2.getErrcode() == TFTPErrorCode::IllegalOperation);
-          REQUIRE(ep2.getMessage() == std::nullopt);
+          REQUIRE(ep2.get_opcode() == TFTPOpcode::ERROR);
+          REQUIRE(ep2.get_errcode() == TFTPErrorCode::IllegalOperation);
+          REQUIRE(ep2.get_message() == std::nullopt);
      }
 
      SECTION("Setters and getters") {
           ErrorPacket ep;
-          ep.setErrcode(TFTPErrorCode::NoSuchUser);
-          REQUIRE(ep.getErrcode() == TFTPErrorCode::NoSuchUser);
-          ep.setMessage("You don’t exist");
-          REQUIRE(ep.getMessage() == "You don’t exist");
+          ep.set_errcode(TFTPErrorCode::NoSuchUser);
+          REQUIRE(ep.get_errcode() == TFTPErrorCode::NoSuchUser);
+          ep.set_message("You don’t exist");
+          REQUIRE(ep.get_message() == "You don’t exist");
 
-          ep.setErrcode(TFTPErrorCode::Unknown);
-          REQUIRE(ep.getErrcode() == TFTPErrorCode::Unknown);
-          ep.removeMessage();
-          REQUIRE(ep.getMessage() == std::nullopt);
+          ep.set_errcode(TFTPErrorCode::Unknown);
+          REQUIRE(ep.get_errcode() == TFTPErrorCode::Unknown);
+          ep.remove_message();
+          REQUIRE(ep.get_message() == std::nullopt);
      }
 
      SECTION("Serialisation and deserialisation") {
           ErrorPacket ep(TFTPErrorCode::DiskFull, "I can't take it anymore");
 
           // Packet -> Binary
-          std::vector<char> binary = ep.toBinary();
+          std::vector<char> binary = ep.to_binary();
           REQUIRE(binary[0] == 0x00);  // Opcode (HI)
           REQUIRE(binary[1] == 0x05);  // Opcode (LO)
           REQUIRE(binary[2] == 0x00);  // Error code (HI)
@@ -58,16 +58,16 @@ TEST_CASE("Error Packet Functionality", "[packet_rrq]") {
 
           // Binary -> Packet
           ErrorPacket ep2;
-          ep2.fromBinary(binary);
-          REQUIRE(ep2.getOpcode() == TFTPOpcode::ERROR);
-          REQUIRE(ep2.getErrcode() == TFTPErrorCode::DiskFull);
-          REQUIRE(ep2.getMessage() == "I can't take it anymore");
+          ep2.from_binary(binary);
+          REQUIRE(ep2.get_opcode() == TFTPOpcode::ERROR);
+          REQUIRE(ep2.get_errcode() == TFTPErrorCode::DiskFull);
+          REQUIRE(ep2.get_message() == "I can't take it anymore");
           REQUIRE(ep == ep2);
      }
 
      SECTION("Empty serialisation") {
           ErrorPacket ep;
-          std::vector<char> binary = ep.toBinary();
+          std::vector<char> binary = ep.to_binary();
           REQUIRE(binary.size() == 5);  // OP OP ERR ERR 00
      }
 }
