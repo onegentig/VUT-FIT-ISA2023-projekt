@@ -11,12 +11,12 @@
 
 /* === Constructors === */
 
-TFTPServer::TFTPServer() : port(DEFAULT_TFTP_PORT), rootdir("./") {
+TFTPServer::TFTPServer() : port(TFTP_PORT), rootdir("./") {
      this->running.store(false);
 }
 
 TFTPServer::TFTPServer(std::string rootdir)
-    : port(DEFAULT_TFTP_PORT), rootdir(rootdir) {
+    : port(TFTP_PORT), rootdir(rootdir) {
      /* Verify root directory */
      if (!this->validateDir())
           throw std::runtime_error("Invalid root directory");
@@ -59,7 +59,7 @@ void TFTPServer::start() {
 
      /* Set up timeout */
      struct timeval timeout {
-          TIMEOUT, 0
+          TFTP_TIMEO, 0
      };
 
      if (setsockopt(this->fd, SOL_SOCKET, SO_RCVTIMEO,
@@ -109,7 +109,7 @@ void TFTPServer::connListen() {
      // TODO: This logic should be moved to the loop below
      struct sockaddr_in c_addr {};
      socklen_t c_addr_len = sizeof(c_addr);
-     std::array<uint8_t, MAX_PACKET_SIZE> buffer{0};
+     std::array<uint8_t, TFTP_MAX_PACKET> buffer{0};
 
      /** @see
       * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=23
@@ -120,14 +120,14 @@ void TFTPServer::connListen() {
           memset(&c_addr, 0, c_addr_len);
 
           ssize_t read_size = recvfrom(
-              this->fd, buffer.data(), MAX_PACKET_SIZE, 0,
+              this->fd, buffer.data(), TFTP_MAX_PACKET, 0,
               reinterpret_cast<struct sockaddr*>(&c_addr), &c_addr_len);
 
           if (read_size < 0) {
                if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     /* No new connections */
                     std::this_thread::sleep_for(
-                        std::chrono::milliseconds(THREAD_DELAY));
+                        std::chrono::milliseconds(TFTP_THREAD_DELAY));
                     continue;
                }
 
@@ -141,7 +141,8 @@ void TFTPServer::connListen() {
                     << ntohs(c_addr.sin_port) << std::endl;
 
           /* Short sleep (makes the loop a bit less CPU-heavy) */
-          std::this_thread::sleep_for(std::chrono::milliseconds(THREAD_DELAY));
+          std::this_thread::sleep_for(
+              std::chrono::milliseconds(TFTP_THREAD_DELAY));
      }
 }
 
