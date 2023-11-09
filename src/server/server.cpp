@@ -16,23 +16,21 @@ TFTPServer::TFTPServer() : port(TFTP_PORT), rootdir("./") {
 }
 
 TFTPServer::TFTPServer(std::string rootdir)
-    : port(TFTP_PORT), rootdir(rootdir) {
+    : port(TFTP_PORT), rootdir(std::move(rootdir)) {
      /* Verify root directory */
-     if (!this->check_dir())
-          throw std::runtime_error("Invalid root directory");
+     if (!this->check_dir()) throw std::runtime_error("Invalid root directory");
 
      this->running.store(false);
 }
 
 TFTPServer::TFTPServer(std::string rootdir, int port)
-    : port(port), rootdir(rootdir) {
+    : port(port), rootdir(std::move(rootdir)) {
      /* Verify port number */
      if (port < 1 || port > 65535)
           throw std::runtime_error("Invalid port number");
 
      /* Verify root directory */
-     if (!this->check_dir())
-          throw std::runtime_error("Invalid root directory");
+     if (!this->check_dir()) throw std::runtime_error("Invalid root directory");
 
      this->running.store(false);
 }
@@ -51,7 +49,7 @@ void TFTPServer::start() {
           return;
      }
 
-     std::cout << "  Socket created" << std::endl;
+     std::cout << "  Socket created with fd " << this->fd << std::endl;
 
      /* Set up address */
      memset(&(this->addr), 0, this->addr_len);
@@ -68,6 +66,7 @@ void TFTPServer::start() {
                     reinterpret_cast<char*>(&timeout), sizeof(timeout))
          < 0) {
           std::cerr << "!ERR! Failed to set socket timeout!" << std::endl;
+          close(this->fd);
           return;
      }
 
@@ -77,6 +76,7 @@ void TFTPServer::start() {
                     sizeof(optval))
          < 0) {
           std::cerr << "!ERR! Failed to set socket options!" << std::endl;
+          close(this->fd);
           return;
      }
 
@@ -84,7 +84,9 @@ void TFTPServer::start() {
      if (bind(this->fd, reinterpret_cast<struct sockaddr*>(&this->addr),
               addr_len)
          < 0) {
-          std::cerr << "!ERR! Failed to bind socket!" << std::endl;
+          std::cerr << "!ERR! Failed to bind socket!"
+                    << " : " << strerror(errno) << std::endl;
+          close(this->fd);
           return;
      }
 
@@ -95,11 +97,13 @@ void TFTPServer::start() {
      int flags = fcntl(this->fd, F_GETFL, 0);
      if (flags < 0) {
           std::cerr << "!ERR! Failed to get socket flags!" << std::endl;
+          close(this->fd);
           return;
      }
      flags |= O_NONBLOCK;
      if (fcntl(this->fd, F_SETFL, flags) < 0) {
           std::cerr << "!ERR! Failed to set socket flags!" << std::endl;
+          close(this->fd);
           return;
      }
 
@@ -109,7 +113,7 @@ void TFTPServer::start() {
 
 void TFTPServer::conn_listen() {
      this->running.store(true);
-     std::cout << "==> Listening for connections..." << std::endl;
+     std::cout << ":: Listening for connections..." << std::endl;
 
      /** @see
       * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=23
@@ -120,6 +124,16 @@ void TFTPServer::conn_listen() {
           std::array<char, TFTP_MAX_PACKET> buffer{0};
           memset(buffer.data(), 0, buffer.size());
           memset(&c_addr, 0, c_addr_len);
+
+          /* Check for and remove closed connections */
+          // @see: https://stackoverflow.com/a/39019851
+          connections.erase(
+              std::remove_if(
+                  connections.begin(), connections.end(),
+                  [](const std::shared_ptr<TFTPServerConnection>& conn) {
+                       return !conn->is_running();
+                  }),
+              connections.end());
 
           /* Recieve message */
           ssize_t read_size = recvfrom(
@@ -140,33 +154,35 @@ void TFTPServer::conn_listen() {
                continue;
           }
 
-          /* Log (remove this afterwards) */
-          std::cout << "Received " << read_size << " bytes from "
-                    << inet_ntoa(c_addr.sin_addr) << ":"
-                    << ntohs(c_addr.sin_port) << std::endl;
+          /* Parse incoming packet */
+          auto packet_ptr = PacketFactory::create(buffer, read_size);
+          if (!packet_ptr) {
+               std::cerr << "!ERR! Received an unparsable packet!" << std::endl;
+               continue;
+          }
+
+          if (packet_ptr->get_opcode() == TFTPOpcode::ACK) {
+               // TODO: Am I supposed to handle this somehow?
+               continue;
+          } else if (packet_ptr->get_opcode() != TFTPOpcode::RRQ
+                     && packet_ptr->get_opcode() != TFTPOpcode::WRQ) {
+               std::cerr << "!ERR! Received a non-request packet!" << std::endl;
+               packet_ptr->hexdump();
+               continue;
+          }
+
+          auto* req_packet_ptr = dynamic_cast<RequestPacket*>(packet_ptr.get());
 
           /* Instantiate connection instance */
-          // TODO: This part can be done more safely and elegantly
-          RequestPacket reqPacket = RequestPacket();
-          std::vector<char> buffer_vec(buffer.begin(), buffer.end());
-          reqPacket.from_binary(buffer_vec);
+          std::cout << "==> New connection from " << inet_ntoa(c_addr.sin_addr)
+                    << ":" << ntohs(c_addr.sin_port) << std::endl;
           auto conn = std::make_shared<TFTPServerConnection>(
-              this->fd, c_addr, reqPacket, this->rootdir);
+              this->fd, c_addr, *req_packet_ptr, this->rootdir);
           this->connections.push_back(conn);
 
           /* Execute connection in a separate thread */
           std::thread tConn(&TFTPServerConnection::run, conn);
           tConn.detach();
-
-          /* Check for and remove closed connections */
-          // @see: https://stackoverflow.com/a/39019851
-          connections.erase(
-              std::remove_if(
-                  connections.begin(), connections.end(),
-                  [](const std::shared_ptr<TFTPServerConnection>& conn) {
-                       return !conn->is_running();
-                  }),
-              connections.end());
 
           /* Short sleep (makes the loop a bit less CPU-heavy) */
           std::this_thread::sleep_for(

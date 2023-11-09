@@ -94,7 +94,7 @@ class BasePacket {
           }
 
           // Add null terminator
-          if (netasciiData.size() == 0 || netasciiData.back() != '\0')
+          if (netasciiData.empty() || netasciiData.back() != '\0')
                netasciiData.push_back('\0');
 
           return netasciiData;
@@ -131,8 +131,7 @@ class BasePacket {
           }
 
           // Remove null terminator
-          if (bin_data.size() > 0 && bin_data.back() == '\0')
-               bin_data.pop_back();
+          if (!bin_data.empty() && bin_data.back() == '\0') bin_data.pop_back();
 
           return bin_data;
      }
