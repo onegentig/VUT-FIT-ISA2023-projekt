@@ -40,7 +40,8 @@ AcknowledgementPacket AcknowledgementPacket::from_binary(
           throw std::invalid_argument("Incorrect packet size");
 
      /* Copy binary data to variables */
-     uint16_t opcode, block_n;
+     uint16_t opcode;
+     uint16_t block_n;
      std::memcpy(&opcode, bin_data.data(), sizeof(opcode));
      std::memcpy(&block_n, bin_data.data() + 2, sizeof(block_n));
 

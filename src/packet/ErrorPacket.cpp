@@ -46,21 +46,25 @@ std::vector<char> ErrorPacket::to_binary() const {
 }
 
 ErrorPacket ErrorPacket::from_binary(const std::vector<char>& bin_data) {
-     if (bin_data.size() < 4)  // Min. size is 4B (2B opcode + 2B errcode)
+     if (bin_data.size() < 4) {  // Min. size is 4B (2B opcode + 2B errcode)
           throw std::invalid_argument("Incorrect packet size");
+     }
 
      /* Obtain and validate opcode */
      uint16_t opcode;
      std::memcpy(&opcode, bin_data.data(), sizeof(opcode));
      opcode = ntohs(opcode);
-     if (opcode != static_cast<uint16_t>(TFTPOpcode::ERROR))
+     if (opcode != static_cast<uint16_t>(TFTPOpcode::ERROR)) {
           throw std::invalid_argument("Incorrect opcode");
+     }
 
      /* Obtain and validate error code */
      uint16_t errcode;
      std::memcpy(&errcode, bin_data.data() + 2, sizeof(errcode));
      errcode = ntohs(errcode);
-     if (errcode > 7) throw std::invalid_argument("Incorrect error code");
+     if (errcode > 7) {
+          throw std::invalid_argument("Incorrect error code");
+     }
 
      /* Obtain and validate error message */
      if (bin_data.size() > 5) {

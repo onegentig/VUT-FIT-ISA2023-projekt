@@ -11,7 +11,7 @@
 
 /* === Constructors === */
 
-RequestPacket::RequestPacket() : filename(""), mode(TFTPDataFormat::Octet) {
+RequestPacket::RequestPacket() : mode(TFTPDataFormat::Octet) {
      opcode = TFTPOpcode::RRQ;
 }
 
