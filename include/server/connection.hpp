@@ -16,13 +16,13 @@
  * @brief Enumeration to represent possible states of a connection
  */
 enum class ConnectionState {
-     REQUESTED, /**< Initial transitory state entered on WRQ/RRQ */
-     READING,   /**< TRANSFERING state on reading */
-     WRITING,   /**< TRANSFERING state on writing */
-     TIMEDOUT,  /**< Lost packet state; attempts retransmit */
-     DENIED,    /**< Request not fulfillable; terminal state*/
-     ERRORED,   /**< Mid-transfer error; terminal state */
-     COMPLETED  /**< Transfer completed; terminal state */
+     REQUESTED,   /**< Initial transitory state entered on WRQ/RRQ */
+     UPLOADING,   /**< TRANSFERING state on reading */
+     DOWNLOADING, /**< TRANSFERING state on writing */
+     TIMEDOUT,    /**< Lost packet state; attempts retransmit */
+     DENIED,      /**< Request not fulfillable; terminal state*/
+     ERRORED,     /**< Mid-transfer error; terminal state */
+     COMPLETED    /**< Transfer completed; terminal state */
 };
 
 /**
@@ -32,12 +32,12 @@ class TFTPServerConnection {
    public:
      /**
       * @brief Constructs a new TFTPServerConnection object
-      * @param fd Client socket file descriptor
-      * @param addr Client address
+      * @param srv_fd Client socket file descriptor
+      * @param clt_addr Client address
       * @param req_packet Request packet (RRQ / WRQ)
       * @param root_dir Server root directory
       */
-     TFTPServerConnection(int fd, const sockaddr_in& addr,
+     TFTPServerConnection(int srv_fd, const sockaddr_in& clt_addr,
                           const RequestPacket& req_packet,
                           const std::string& root_dir);
 
@@ -59,6 +59,18 @@ class TFTPServerConnection {
      void run();
 
      /**
+      * @brief Handles a read request.
+      */
+     void handle_rrq();
+
+     /**
+      * @brief Handles a write request
+      */
+     void handle_wrq();
+
+     /* === Getters, setters and checkers === */
+
+     /**
       * @brief Checks if the connection is running
       * @return true if running
       * @return false otherwise
@@ -75,8 +87,8 @@ class TFTPServerConnection {
       * @return false otherwise
       */
      bool is_transfering() const {
-          return this->state == ConnectionState::READING
-                 || this->state == ConnectionState::WRITING;
+          return this->state == ConnectionState::UPLOADING
+                 || this->state == ConnectionState::DOWNLOADING;
      }
 
      /**
@@ -93,14 +105,45 @@ class TFTPServerConnection {
       */
      bool is_download() const { return this->type == TFTPRequestType::Write; }
 
+     /* === Helper Methods === */
+
+     /**
+      * @brief Sends an error packet and sets
+      * the connection state to ERRORED
+      */
+     void send_error(TFTPErrorCode code, const std::string& msg);
+
+     /**
+      * @brief Logs a connection INFO message
+      * to standard output.
+      */
+     void log_info(const std::string& msg) const {
+          std::cout << "  [" << this->tid << "] - INFO  - " << msg << std::endl;
+     };
+
+     /**
+      * @brief Logs a connection ERROR message
+      * to standard output.
+      */
+     void log_error(const std::string& msg) const {
+          std::cout << "  [" << this->tid << "] - ERROR - " << msg << std::endl;
+     };
+
    protected:
-     int fd;                            /**< Client socket file descriptor */
-     struct sockaddr_in addr {};        /**< Address of the client */
-     std::string file_path;             /**< Path to the file */
-     TFTPRequestType type;              /**< Request type (RRQ / WRQ) */
-     TFTPDataFormat format;             /**< Transfer format */
-     ConnectionState state;             /**< State of the connection */
-     socklen_t addr_len = sizeof(addr); /**< Length of the address */
+     int tid = -1;                    /**< Transfer identifier */
+     int srv_fd;                      /**< Server socket file descriptor */
+     int conn_fd = -1;                /**< Connection socket file descriptor */
+     int file_fd = -1;                /**< File descriptor of the file */
+     struct sockaddr_in clt_addr {};  /**< Address of the client */
+     struct sockaddr_in conn_addr {}; /**< Address of the connection */
+     std::string file_path;           /**< Path to the file */
+     TFTPRequestType type;            /**< Request type (RRQ / WRQ) */
+     TFTPDataFormat format;           /**< Transfer format */
+     ConnectionState state;           /**< State of the connection */
+     socklen_t clt_addr_len
+         = sizeof(clt_addr); /**< Length of the client address */
+     socklen_t conn_addr_len
+         = sizeof(conn_addr); /**< Length of the connection address */
 };
 
 #endif
