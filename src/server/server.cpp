@@ -49,7 +49,7 @@ void TFTPServer::start() {
           return;
      }
 
-     std::cout << "  Socket created with fd " << this->fd << std::endl;
+     std::cout << "  socket created with FD " << this->fd << std::endl;
 
      /* Set up address */
      memset(&(this->addr), 0, this->addr_len);
@@ -90,7 +90,7 @@ void TFTPServer::start() {
           return;
      }
 
-     std::cout << "  Socket bound to " << inet_ntoa(this->addr.sin_addr) << ":"
+     std::cout << "  socket bound to " << inet_ntoa(this->addr.sin_addr) << ":"
                << ntohs(this->addr.sin_port) << std::endl;
 
      /* Make the listening socket non-blocking */
@@ -174,8 +174,6 @@ void TFTPServer::conn_listen() {
           auto* req_packet_ptr = dynamic_cast<RequestPacket*>(packet_ptr.get());
 
           /* Instantiate connection instance */
-          std::cout << "==> New connection from " << inet_ntoa(c_addr.sin_addr)
-                    << ":" << ntohs(c_addr.sin_port) << std::endl;
           auto conn = std::make_shared<TFTPServerConnection>(
               this->fd, c_addr, *req_packet_ptr, this->rootdir);
           this->connections.push_back(conn);
