@@ -12,7 +12,6 @@
 
 #     include <csignal>
 #     include <memory>
-#     include <thread>
 
 #     include "common.hpp"
 #     include "server/connection.hpp"

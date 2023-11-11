@@ -107,12 +107,22 @@ void TFTPServerConnection::run() {
                     this->type == TFTPRequestType::Read ? this->handle_rrq()
                                                         : this->handle_wrq();
                     break;
+               case ConnectionState::UPLOADING:
+                    this->handle_upload();
+                    break;
+               case ConnectionState::AWAITING:
+                    this->handle_await();
+                    break;
                default:
                     // TODO: implement everything
                     log_error("Reached a non-implemented state");
                     this->send_error(TFTPErrorCode::Unknown, "Not implemented");
                     break;
           }
+
+          // TODO: This could be reworked to `select` or `poll` for better perf
+          std::this_thread::sleep_for(
+              std::chrono::microseconds(TFTP_THREAD_DELAY));
      }
 }
 
@@ -137,6 +147,106 @@ void TFTPServerConnection::handle_wrq() {
      // TODO: implement
      log_error("WRQ handling not implemented");
      this->send_error(TFTPErrorCode::Unknown, "Not implemented");
+}
+
+void TFTPServerConnection::handle_upload() {
+     if (this->block_n == 0) this->block_n = 1;
+
+     /* Create data payload */
+     DataPacket packet = DataPacket(this->file_fd, this->block_n);
+     packet.set_mode(this->format);
+     auto payload = packet.to_binary();
+     if (payload.size() < TFTP_MAX_DATA + 4) {
+          this->is_last.store(true);
+     } else {
+          this->is_last.store(false);
+     }
+
+     log_info("Sending block " + std::to_string(this->block_n) + " ("
+              + std::to_string(payload.size()) + " bytes, is_last is "
+              + std::to_string(this->is_last.load()) + ")");
+
+     /* Send data */
+     if (sendto(this->srv_fd, payload.data(), payload.size(), 0,
+                reinterpret_cast<const sockaddr*>(&this->clt_addr),
+                sizeof(this->clt_addr))
+         < 0) {
+          this->state
+              = ConnectionState::TIMEDOUT;  // TIMEDOUT state will attempt to
+                                            // resend the packet
+          return;
+     }
+
+     /* And now, await acknowledgement */
+     log_info("Awaiting ACK for block " + std::to_string(this->block_n));
+     this->state = ConnectionState::AWAITING;
+}
+
+void TFTPServerConnection::handle_await() {
+     /* Receive ACK */
+     ssize_t bytes_rx
+         = recvfrom(this->srv_fd, this->buffer.data(), TFTP_MAX_PACKET, 0,
+                    reinterpret_cast<struct sockaddr*>(&this->clt_addr),
+                    &this->clt_addr_len);
+
+     /* Handle errors */
+     if (bytes_rx < 0) {
+          if (errno == EAGAIN || errno == EWOULDBLOCK) {
+               /* Nothing to receive, loop in state */
+               return;
+          }
+
+          log_error("Failed to receive ACK: " + std::string(strerror(errno)));
+          send_error(TFTPErrorCode::Unknown, std::string(strerror(errno)));
+          return;
+     }
+
+     /* Parse incoming packet */
+     auto packet_ptr = PacketFactory::create(this->buffer, bytes_rx);
+     if (!packet_ptr) {
+          log_error("Received an unparsable packet");
+          send_error(TFTPErrorCode::IllegalOperation,
+                     "Received an invalid packet");
+          return;
+     }
+
+     if (packet_ptr->get_opcode() != TFTPOpcode::ACK) {
+          log_error("Received a non-ACK packet");
+          send_error(TFTPErrorCode::IllegalOperation,
+                     "Received a non-ACK packet");
+          return;
+     }
+
+     auto* ack_packet_ptr
+         = dynamic_cast<AcknowledgementPacket*>(packet_ptr.get());
+
+     log_info("Received ACK for block " + std::to_string(this->block_n) + " ("
+              + std::to_string(bytes_rx) + " bytes, is_last is "
+              + std::to_string(this->is_last.load()) + ")");
+
+     /* Check if ACK block number is as expected */
+     if (ack_packet_ptr->get_block_number() < this->block_n) {
+          return;  // Stray past ACK, ignore.
+     } else if (ack_packet_ptr->get_block_number() > this->block_n) {
+          log_error("Received an ACK with a future block number");
+          send_error(TFTPErrorCode::IllegalOperation,
+                     "Received an ACK with a future block number");
+          return;
+     }
+
+     /* Check if this is the last packet */
+     if (this->is_last.load()) {
+          log_info("Upload completed!");
+          this->state = ConnectionState::COMPLETED;
+          return;
+     }
+
+     /* Increment block number */
+     this->block_n++;
+
+     /* Continue transferring */
+     this->state = is_upload() ? ConnectionState::UPLOADING
+                               : ConnectionState::DOWNLOADING;
 }
 
 /* === Helper Methods === */
