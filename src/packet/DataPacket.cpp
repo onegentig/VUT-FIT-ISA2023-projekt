@@ -103,7 +103,6 @@ std::vector<char> DataPacket::read_data() const {
 
 std::vector<char> DataPacket::to_binary() const {
      std::vector<char> filedata = read_data();
-     if (filedata.empty()) return std::vector<char>();
      size_t length = 2 /* opcode */ + 2 /* block number */ + filedata.size();
      std::vector<char> bin_data(length);
 
@@ -114,8 +113,11 @@ std::vector<char> DataPacket::to_binary() const {
      std::memcpy(bin_data.data() + 2, &block_n, sizeof(block_n));
 
      /* Insert data to vector */
-     size_t offset = 4;  // after 2B opcode + 2B block number
-     std::memcpy(bin_data.data() + offset, filedata.data(), filedata.size());
+     if (!filedata.empty()) {
+          size_t offset = 4;  // after 2B opcode + 2B block number
+          std::memcpy(bin_data.data() + offset, filedata.data(),
+                      filedata.size());
+     }
 
      return bin_data;
 }
