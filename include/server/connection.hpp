@@ -9,6 +9,8 @@
 #ifndef TFTP_CONNECTION_HPP
 #     define TFTP_CONNECTION_HPP
 
+#     include <thread>
+
 #     include "common.hpp"
 #     include "packet/PacketFactory.hpp"
 
@@ -19,6 +21,7 @@ enum class ConnectionState {
      REQUESTED,   /**< Initial transitory state entered on WRQ/RRQ */
      UPLOADING,   /**< TRANSFERING state on reading */
      DOWNLOADING, /**< TRANSFERING state on writing */
+     AWAITING,    /**< Awaiting ACK */
      TIMEDOUT,    /**< Lost packet state; attempts retransmit */
      DENIED,      /**< Request not fulfillable; terminal state*/
      ERRORED,     /**< Mid-transfer error; terminal state */
@@ -67,6 +70,16 @@ class TFTPServerConnection {
       * @brief Handles a write request
       */
      void handle_wrq();
+
+     /**
+      * @brief Handles upload of a data packet
+      */
+     void handle_upload();
+
+     /**
+      * @brief Handles awaiting state
+      */
+     void handle_await();
 
      /* === Getters, setters and checkers === */
 
@@ -134,12 +147,16 @@ class TFTPServerConnection {
      int srv_fd;                      /**< Server socket file descriptor */
      int conn_fd = -1;                /**< Connection socket file descriptor */
      int file_fd = -1;                /**< File descriptor of the file */
+     int block_n = 0;                 /**< Current block number */
+     std::atomic<bool> is_last;       /**< Flag for last packet */
      struct sockaddr_in clt_addr {};  /**< Address of the client */
      struct sockaddr_in conn_addr {}; /**< Address of the connection */
      std::string file_path;           /**< Path to the file */
      TFTPRequestType type;            /**< Request type (RRQ / WRQ) */
      TFTPDataFormat format;           /**< Transfer format */
      ConnectionState state;           /**< State of the connection */
+     std::array<char, TFTP_MAX_PACKET> buffer{
+         0}; /**< Buffer for incoming packets */
      socklen_t clt_addr_len
          = sizeof(clt_addr); /**< Length of the client address */
      socklen_t conn_addr_len
