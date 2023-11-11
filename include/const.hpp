@@ -30,6 +30,16 @@ static const uint16_t TFTP_PORT = 69;
 static const int TFTP_TIMEO = 4;
 
 /**
+ * @brief Timeout for TFTP packets (retransmit after) in seconds.
+ */
+static const int TFTP_PACKET_TIMEO = 3;
+
+/**
+ * @brief Maximum numbeer of retransmit attempts.
+ */
+static const int TFTP_MAX_RETRIES = 4;
+
+/**
  * @brief Short delay for the handling loop in miliseconds.
  */
 static const int TFTP_THREAD_DELAY = 100;

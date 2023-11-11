@@ -151,6 +151,7 @@ void TFTPServerConnection::handle_wrq() {
 
 void TFTPServerConnection::handle_upload() {
      if (this->block_n == 0) this->block_n = 1;
+     this->last_packet_time = std::chrono::steady_clock::now();
 
      /* Create data payload */
      DataPacket packet = DataPacket(this->file_fd, this->block_n);
@@ -183,6 +184,28 @@ void TFTPServerConnection::handle_upload() {
 }
 
 void TFTPServerConnection::handle_await() {
+     /* Timeout check */
+     auto now = std::chrono::steady_clock::now();
+     if (std::chrono::duration_cast<std::chrono::seconds>(
+             now - this->last_packet_time)
+             .count()
+         > TFTP_PACKET_TIMEO) {
+          /* Check if TFTP_MAX_RETRIES was reached */
+          if (this->retry_attempts >= TFTP_MAX_RETRIES) {
+               log_error("Maximum number of retries reached");
+               send_error(TFTPErrorCode::Unknown, "Retransmission timeout");
+               return;
+          }
+
+          this->retry_attempts++;
+          this->state = is_upload() ? ConnectionState::UPLOADING
+                                    : ConnectionState::DOWNLOADING;
+          log_info("Retransmitting block " + std::to_string(this->block_n)
+                   + " (attempt " + std::to_string(this->retry_attempts + 1)
+                   + ")");
+          return;
+     }
+
      /* Receive ACK */
      ssize_t bytes_rx
          = recvfrom(this->srv_fd, this->buffer.data(), TFTP_MAX_PACKET, 0,
