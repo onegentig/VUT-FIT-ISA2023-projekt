@@ -144,9 +144,40 @@ void TFTPServerConnection::handle_rrq() {
 }
 
 void TFTPServerConnection::handle_wrq() {
-     // TODO: implement
-     log_error("WRQ handling not implemented");
-     this->send_error(TFTPErrorCode::Unknown, "Not implemented");
+     /* Check if file exists */
+     // @see https://stackoverflow.com/a/12774387
+     if (access(this->file_path.c_str(), F_OK) == 0) {
+          log_error("File already exists");
+          return this->send_error(TFTPErrorCode::FileAlreadyExists,
+                                  "File already exists");
+     }
+
+     /* Create a part file */
+     this->file_fd
+         = open(this->file_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+     /* Check if file was created properly */
+     if (this->file_fd < 0) {
+          log_error("Failed to create file");
+          return this->send_error(TFTPErrorCode::AccessViolation,
+                                  "Failed to create file");
+     }
+
+     /* Send ACK for block 0 */
+     AcknowledgementPacket packet = AcknowledgementPacket(0);
+     auto payload = packet.to_binary();
+     if (sendto(this->srv_fd, payload.data(), payload.size(), 0,
+                reinterpret_cast<const sockaddr*>(&this->clt_addr),
+                sizeof(this->clt_addr))
+         < 0) {
+          log_error("Failed to send ACK for block 0");
+          return this->send_error(TFTPErrorCode::Unknown,
+                                  "Failed to send ACK for block 0");
+     }
+
+     /* Things are ready for transfer */
+     log_info("File ready, starting download");
+     this->state = ConnectionState::DOWNLOADING;
 }
 
 void TFTPServerConnection::handle_upload() {
@@ -185,24 +216,24 @@ void TFTPServerConnection::handle_upload() {
 
 void TFTPServerConnection::handle_await() {
      /* Timeout check */
+     // @see https://en.cppreference.com/w/cpp/chrono#Example
      auto now = std::chrono::steady_clock::now();
      if (std::chrono::duration_cast<std::chrono::seconds>(
              now - this->last_packet_time)
              .count()
          > TFTP_PACKET_TIMEO) {
           /* Check if TFTP_MAX_RETRIES was reached */
-          if (this->retry_attempts >= TFTP_MAX_RETRIES) {
+          if (this->send_tries >= TFTP_MAX_RETRIES + 1) {
                log_error("Maximum number of retries reached");
                send_error(TFTPErrorCode::Unknown, "Retransmission timeout");
                return;
           }
 
-          this->retry_attempts++;
+          this->send_tries++;
           this->state = is_upload() ? ConnectionState::UPLOADING
                                     : ConnectionState::DOWNLOADING;
           log_info("Retransmitting block " + std::to_string(this->block_n)
-                   + " (attempt " + std::to_string(this->retry_attempts + 1)
-                   + ")");
+                   + " (attempt " + std::to_string(this->send_tries + 1) + ")");
           return;
      }
 

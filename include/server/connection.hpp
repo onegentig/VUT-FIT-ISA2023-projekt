@@ -77,7 +77,7 @@ class TFTPServerConnection {
      void handle_upload();
 
      /**
-      * @brief Handles awaiting state
+      * @brief Handles awaiting state (wait for ACK)
       */
      void handle_await();
 
@@ -148,7 +148,7 @@ class TFTPServerConnection {
      int conn_fd = -1;                /**< Connection socket file descriptor */
      int file_fd = -1;                /**< File descriptor of the file */
      int block_n = 0;                 /**< Current block number */
-     int retry_attempts = 0;          /**< Number of retransmi attempts */
+     int send_tries = 0;              /**< Number of retransmi attempts */
      std::atomic<bool> is_last;       /**< Flag for last packet */
      struct sockaddr_in clt_addr {};  /**< Address of the client */
      struct sockaddr_in conn_addr {}; /**< Address of the connection */
