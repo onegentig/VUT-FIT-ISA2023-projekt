@@ -14,7 +14,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
                                            const RequestPacket& reqPacket,
                                            const std::string& rootDir)
     : srv_fd(srv_fd), clt_addr(clt_addr) {
-     this->state = ConnectionState::REQUESTED;
+     this->state = ConnectionState::Requested;
      file_path = rootDir + "/" + reqPacket.get_filename();
      type = reqPacket.get_type();
      format = reqPacket.get_mode();
@@ -23,7 +23,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
      this->conn_fd = socket(AF_INET, SOCK_DGRAM, 0);
      if (this->conn_fd == -1) {
           std::cerr << "!ERR! Failed to create a socket!" << std::endl;
-          this->state = ConnectionState::ERRORED;
+          this->state = ConnectionState::Errored;
           return;
      }
 
@@ -42,7 +42,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
                     sizeof(timeout))
          < 0) {
           std::cerr << "!ERR! Failed to set timeout!" << std::endl;
-          this->state = ConnectionState::ERRORED;
+          this->state = ConnectionState::Errored;
           return;
      }
 
@@ -52,7 +52,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
                     &optval, sizeof(optval))
          < 0) {
           std::cerr << "!ERR! Failed to set socket options!" << std::endl;
-          this->state = ConnectionState::ERRORED;
+          this->state = ConnectionState::Errored;
           return;
      }
 
@@ -63,7 +63,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
          < 0) {
           std::cerr << "!ERR! Failed to bind socket!"
                     << " : " << strerror(errno) << std::endl;
-          this->state = ConnectionState::ERRORED;
+          this->state = ConnectionState::Errored;
           return;
      }
 
@@ -74,7 +74,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
          < 0) {
           std::cerr << "!ERR! Failed to get socket name!"
                     << " : " << strerror(errno) << std::endl;
-          this->state = ConnectionState::ERRORED;
+          this->state = ConnectionState::Errored;
           return;
      }
 
@@ -85,17 +85,27 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
 }
 
 TFTPServerConnection::~TFTPServerConnection() {
+     /* Close connection socket */
      if (this->conn_fd >= 0) {
           ::close(this->conn_fd);
           this->conn_fd = -1;
      }
 
+     /* If download (write) ended with error, remove file */
+     if (this->type == TFTPRequestType::Write
+         && this->state != ConnectionState::Completed) {
+          if (access(this->file_path.c_str(), F_OK) == 0) {
+               remove(this->file_path.c_str());
+          }
+     }
+
+     /* Close file */
      if (this->file_fd >= 0) {
           ::close(this->file_fd);
           this->file_fd = -1;
      }
 
-     std::cout << "==> Closing connection [" << this->tid << "]" << std::endl;
+     std::cout << "==> Closed connection [" << this->tid << "]" << std::endl;
 }
 
 /* === Connection Flow === */
@@ -103,14 +113,14 @@ TFTPServerConnection::~TFTPServerConnection() {
 void TFTPServerConnection::run() {
      while (this->is_running()) {
           switch (this->state) {
-               case ConnectionState::REQUESTED:
+               case ConnectionState::Requested:
                     this->type == TFTPRequestType::Read ? this->handle_rrq()
                                                         : this->handle_wrq();
                     break;
-               case ConnectionState::UPLOADING:
+               case ConnectionState::Uploading:
                     this->handle_upload();
                     break;
-               case ConnectionState::AWAITING:
+               case ConnectionState::Awaiting:
                     this->handle_await();
                     break;
                default:
@@ -140,7 +150,7 @@ void TFTPServerConnection::handle_rrq() {
 
      /* Things are ready for transfer */
      log_info("File ready, starting upload");
-     this->state = ConnectionState::UPLOADING;
+     this->state = ConnectionState::Uploading;
 }
 
 void TFTPServerConnection::handle_wrq() {
@@ -177,7 +187,7 @@ void TFTPServerConnection::handle_wrq() {
 
      /* Things are ready for transfer */
      log_info("File ready, starting download");
-     this->state = ConnectionState::DOWNLOADING;
+     this->state = ConnectionState::Downloading;
 }
 
 void TFTPServerConnection::handle_upload() {
@@ -204,14 +214,14 @@ void TFTPServerConnection::handle_upload() {
                 sizeof(this->clt_addr))
          < 0) {
           this->state
-              = ConnectionState::TIMEDOUT;  // TIMEDOUT state will attempt to
+              = ConnectionState::Timedout;  // Timedout state will attempt to
                                             // resend the packet
           return;
      }
 
      /* And now, await acknowledgement */
      log_info("Awaiting ACK for block " + std::to_string(this->block_n));
-     this->state = ConnectionState::AWAITING;
+     this->state = ConnectionState::Awaiting;
 }
 
 void TFTPServerConnection::handle_await() {
@@ -230,8 +240,8 @@ void TFTPServerConnection::handle_await() {
           }
 
           this->send_tries++;
-          this->state = is_upload() ? ConnectionState::UPLOADING
-                                    : ConnectionState::DOWNLOADING;
+          this->state = is_upload() ? ConnectionState::Uploading
+                                    : ConnectionState::Downloading;
           log_info("Retransmitting block " + std::to_string(this->block_n)
                    + " (attempt " + std::to_string(this->send_tries + 1) + ")");
           return;
@@ -291,7 +301,7 @@ void TFTPServerConnection::handle_await() {
      /* Check if this is the last packet */
      if (this->is_last.load()) {
           log_info("Upload completed!");
-          this->state = ConnectionState::COMPLETED;
+          this->state = ConnectionState::Completed;
           return;
      }
 
@@ -299,8 +309,8 @@ void TFTPServerConnection::handle_await() {
      this->block_n++;
 
      /* Continue transferring */
-     this->state = is_upload() ? ConnectionState::UPLOADING
-                               : ConnectionState::DOWNLOADING;
+     this->state = is_upload() ? ConnectionState::Uploading
+                               : ConnectionState::Downloading;
 }
 
 /* === Helper Methods === */
@@ -314,5 +324,5 @@ void TFTPServerConnection::send_error(TFTPErrorCode code,
             reinterpret_cast<const sockaddr*>(&this->clt_addr),
             sizeof(this->clt_addr));
 
-     this->state = ConnectionState::ERRORED;
+     this->state = ConnectionState::Errored;
 }

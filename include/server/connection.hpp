@@ -18,14 +18,14 @@
  * @brief Enumeration to represent possible states of a connection
  */
 enum class ConnectionState {
-     REQUESTED,   /**< Initial transitory state entered on WRQ/RRQ */
-     UPLOADING,   /**< TRANSFERING state on reading */
-     DOWNLOADING, /**< TRANSFERING state on writing */
-     AWAITING,    /**< Awaiting ACK */
-     TIMEDOUT,    /**< Lost packet state; attempts retransmit */
-     DENIED,      /**< Request not fulfillable; terminal state*/
-     ERRORED,     /**< Mid-transfer error; terminal state */
-     COMPLETED    /**< Transfer completed; terminal state */
+     Requested,   /**< Initial transitory state entered on WRQ/RRQ */
+     Uploading,   /**< TRANSFERING state on reading */
+     Downloading, /**< TRANSFERING state on writing */
+     Awaiting,    /**< Awaiting ACK */
+     Timedout,    /**< Lost packet state; attempts retransmit */
+     Denied,      /**< Request not fulfillable; terminal state*/
+     Errored,     /**< Mid-transfer error; terminal state */
+     Completed    /**< Transfer completed; terminal state */
 };
 
 /**
@@ -89,9 +89,9 @@ class TFTPServerConnection {
       * @return false otherwise
       */
      bool is_running() const {
-          return this->state != ConnectionState::COMPLETED
-                 && this->state != ConnectionState::DENIED
-                 && this->state != ConnectionState::ERRORED;
+          return this->state != ConnectionState::Completed
+                 && this->state != ConnectionState::Denied
+                 && this->state != ConnectionState::Errored;
      }
 
      /**
@@ -100,8 +100,8 @@ class TFTPServerConnection {
       * @return false otherwise
       */
      bool is_transfering() const {
-          return this->state == ConnectionState::UPLOADING
-                 || this->state == ConnectionState::DOWNLOADING;
+          return this->state == ConnectionState::Uploading
+                 || this->state == ConnectionState::Downloading;
      }
 
      /**
@@ -122,7 +122,7 @@ class TFTPServerConnection {
 
      /**
       * @brief Sends an error packet and sets
-      * the connection state to ERRORED
+      * the connection state to Errored
       */
      void send_error(TFTPErrorCode code, const std::string& msg);
 
