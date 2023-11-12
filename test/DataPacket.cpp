@@ -151,6 +151,6 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
      SECTION("Empty serialisation") {
           DataPacket dp;
           std::vector<char> binary = dp.to_binary();
-          REQUIRE(binary.size() == 0);
+          REQUIRE(binary.size() == 4);
      }
 }
