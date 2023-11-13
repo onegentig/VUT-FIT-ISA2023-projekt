@@ -93,10 +93,6 @@ class BasePacket {
                }
           }
 
-          // Add null terminator
-          if (netasciiData.empty() || netasciiData.back() != '\0')
-               netasciiData.push_back('\0');
-
           return netasciiData;
      }
 

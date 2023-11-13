@@ -33,7 +33,8 @@ std::vector<char> RequestPacket::to_binary() const {
      std::vector<char> mode_bin = BasePacket::to_netascii(
          std::vector<char>(mode_str.begin(), mode_str.end()));
 
-     size_t length = 2 /* opcode */ + filename_bin.size() + mode_bin.size();
+     size_t length = 2 /* opcode */ + filename_bin.size() + mode_bin.size()
+                     + 2 /* separators */;
      std::vector<char> bin_data(length);
 
      /* Convert and copy opcode in network byte order */
