@@ -93,10 +93,10 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           buf = dp.read_data();
           REQUIRE(buf.size() == 3);
           REQUIRE(std::string(buf.begin(), buf.end()) == "abc");
-          dp.set_mode(TFTPDataFormat::NetASCII);
+          dp.set_mode(TFTPDataFormat::NetASCII);  // No effect
           buf = dp.read_data();
-          REQUIRE(buf.size() == 4);  // 3 + 1 for null terminator
-          REQUIRE(buf == std::vector<char>{'a', 'b', 'c', '\0'});
+          REQUIRE(buf.size() == 3);
+          REQUIRE(std::string(buf.begin(), buf.end()) == "abc");
           close(fd_abc);
 
           /* 4 newlines */
@@ -110,10 +110,10 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
           REQUIRE(std::string(buf.begin(), buf.end()) == "\n\n\n\n");
           dp.set_mode(TFTPDataFormat::NetASCII);
           buf = dp.read_data();
-          REQUIRE(buf.size() == 9);  // 4 * 2 (LF->CRLF) + 1 (null terminator)
+          REQUIRE(buf.size() == 8);  // 4 * 2 (LF->CRLF)
           REQUIRE(buf
                   == std::vector<char>{'\r', '\n', '\r', '\n', '\r', '\n', '\r',
-                                       '\n', '\0'});
+                                       '\n'});
           close(fd_newlines);
      }
 
@@ -134,17 +134,16 @@ TEST_CASE("Data Packet Functionality", "[packet_data]") {
                                binary.begin() + offset + 3);
           REQUIRE(data_bin == "abc");  // Data
           REQUIRE(binary[offset + 3]
-                  == '\0');  // Null terminator (because NetASCII)
-          REQUIRE(binary.size()
-                  == 8);  // 2 (op) + 2 (block) + 4 (data incl. \0)
+                  == '\0');             // Null terminator (because NetASCII)
+          REQUIRE(binary.size() == 7);  // 2 (op) + 2 (block) + 3 (data)
 
           // Binary -> Packet
           DataPacket dp2
               = DataPacket::from_binary(binary, TFTPDataFormat::NetASCII);
           REQUIRE(dp2.get_opcode() == TFTPOpcode::DATA);
           REQUIRE(dp2.get_block_number() == 1);
-          REQUIRE(dp2.get_data().size() == 4);
-          REQUIRE(dp2.read_data().size() == 4);
+          REQUIRE(dp2.get_data().size() == 3);
+          REQUIRE(dp2.read_data().size() == 3);
           REQUIRE(dp == dp2);
      }
 

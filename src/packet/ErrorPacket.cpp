@@ -38,9 +38,9 @@ std::vector<char> ErrorPacket::to_binary() const {
           std::vector<char> msg_bin = BasePacket::to_netascii(
               std::vector<char>(msg.value().begin(), msg.value().end()));
           bin_data.insert(bin_data.end(), msg_bin.begin(), msg_bin.end());
-     } else {
-          bin_data.push_back('\0');
      }
+
+     bin_data.push_back('\0');
 
      return bin_data;
 }
