@@ -34,7 +34,8 @@ class PacketFactory {
                return nullptr;
           }
 
-          uint16_t opcode = ntohs(*((uint16_t*)bin_data.data()));
+          //uint16_t opcode = ntohs(*((uint16_t*)bin_data.data()));
+          uint16_t opcode = ntohs(*reinterpret_cast<const uint16_t*>(bin_data.data()));
 
           switch (opcode) {
                case TFTPOpcode::RRQ:
