@@ -23,7 +23,6 @@ enum class ConnectionState {
      Downloading, /**< TRANSFERING state on writing */
      Awaiting,    /**< Awaiting ACK */
      Timedout,    /**< Lost packet state; attempts retransmit */
-     Denied,      /**< Request not fulfillable; terminal state*/
      Errored,     /**< Mid-transfer error; terminal state */
      Completed    /**< Transfer completed; terminal state */
 };
@@ -100,7 +99,6 @@ class TFTPServerConnection {
       */
      bool is_running() const {
           return this->state != ConnectionState::Completed
-                 && this->state != ConnectionState::Denied
                  && this->state != ConnectionState::Errored;
      }
 

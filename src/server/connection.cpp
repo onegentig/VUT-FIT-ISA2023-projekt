@@ -129,9 +129,8 @@ void TFTPServerConnection::run() {
                         : this->handle_await_download();
                     break;
                default:
-                    // TODO: implement everything
-                    log_error("Reached a non-implemented state");
-                    this->send_error(TFTPErrorCode::Unknown, "Not implemented");
+                    log_error("`run` called in invalid state");
+                    this->state = ConnectionState::Errored;
                     break;
           }
 
@@ -176,18 +175,12 @@ void TFTPServerConnection::handle_upload() {
 
      log_info("Sending block " + std::to_string(this->block_n) + " ("
               + std::to_string(payload.size()) + " bytes, is_last is "
-              + std::to_string(this->is_last.load()) + ")");
+              + std::to_string(static_cast<int>(this->is_last.load())) + ")");
 
      /* Send data */
-     if (sendto(this->srv_fd, payload.data(), payload.size(), 0,
-                reinterpret_cast<const sockaddr*>(&this->clt_addr),
-                sizeof(this->clt_addr))
-         < 0) {
-          this->state
-              = ConnectionState::Timedout;  // Timedout state will attempt to
-                                            // resend the packet
-          return;
-     }
+     sendto(this->srv_fd, payload.data(), payload.size(), 0,
+            reinterpret_cast<const sockaddr*>(&this->clt_addr),
+            sizeof(this->clt_addr));
 
      /* And now, await acknowledgement */
      log_info("Awaiting ACK for block " + std::to_string(this->block_n));
@@ -256,7 +249,7 @@ void TFTPServerConnection::handle_await_upload() {
 
      log_info("Received ACK for block " + std::to_string(this->block_n) + " ("
               + std::to_string(this->rx_len) + " bytes, is_last is "
-              + std::to_string(this->is_last.load()) + ")");
+              + std::to_string(static_cast<int>(this->is_last.load())) + ")");
 
      /* Check if ACK block number is as expected */
      if (ack_packet_ptr->get_block_number() < this->block_n) {
