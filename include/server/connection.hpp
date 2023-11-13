@@ -23,7 +23,6 @@ enum class ConnectionState {
      Downloading, /**< TRANSFERING state on writing */
      Awaiting,    /**< Awaiting ACK */
      Timedout,    /**< Lost packet state; attempts retransmit */
-     Denied,      /**< Request not fulfillable; terminal state*/
      Errored,     /**< Mid-transfer error; terminal state */
      Completed    /**< Transfer completed; terminal state */
 };
@@ -49,10 +48,10 @@ class TFTPServerConnection {
       */
      ~TFTPServerConnection();
 
-     TFTPServerConnection& operator=(TFTPServerConnection&& other) = default;
-     TFTPServerConnection& operator=(const TFTPServerConnection&) = default;
-     TFTPServerConnection(TFTPServerConnection&& other) = default;
-     TFTPServerConnection(const TFTPServerConnection&) = default;
+     TFTPServerConnection& operator=(TFTPServerConnection&& other) = delete;
+     TFTPServerConnection& operator=(const TFTPServerConnection&) = delete;
+     TFTPServerConnection(TFTPServerConnection&& other) = delete;
+     TFTPServerConnection(const TFTPServerConnection&) = delete;
 
      /* === Core Methods === */
 
@@ -77,9 +76,19 @@ class TFTPServerConnection {
      void handle_upload();
 
      /**
-      * @brief Handles awaiting state (wait for ACK)
+      * @brief Handles download of a data packet
       */
-     void handle_await();
+     void handle_download();
+
+     /**
+      * @brief Handles upload awaiting state (wait for ACK)
+      */
+     void handle_await_upload();
+
+     /**
+      * @brief Handles download awaiting state (wait for DATA)
+      */
+     void handle_await_download();
 
      /* === Getters, setters and checkers === */
 
@@ -90,7 +99,6 @@ class TFTPServerConnection {
       */
      bool is_running() const {
           return this->state != ConnectionState::Completed
-                 && this->state != ConnectionState::Denied
                  && this->state != ConnectionState::Errored;
      }
 
@@ -158,8 +166,9 @@ class TFTPServerConnection {
      ConnectionState state;           /**< State of the connection */
      std::chrono::steady_clock::time_point
          last_packet_time; /**< Time of last packet */
-     std::array<char, TFTP_MAX_PACKET> buffer{
-         0}; /**< Buffer for incoming packets */
+     std::array<char, TFTP_MAX_PACKET> rx_buffer{
+         0};             /**< Buffer for incoming packets */
+     ssize_t rx_len = 0; /**< Length of the incoming packet */
      socklen_t clt_addr_len
          = sizeof(clt_addr); /**< Length of the client address */
      socklen_t conn_addr_len
