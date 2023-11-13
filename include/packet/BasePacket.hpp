@@ -126,9 +126,6 @@ class BasePacket {
                }
           }
 
-          // Remove null terminator
-          if (!bin_data.empty() && bin_data.back() == '\0') bin_data.pop_back();
-
           return bin_data;
      }
 
