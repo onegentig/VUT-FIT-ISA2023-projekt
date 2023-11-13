@@ -48,10 +48,10 @@ class TFTPServerConnection {
       */
      ~TFTPServerConnection();
 
-     TFTPServerConnection& operator=(TFTPServerConnection&& other) = default;
-     TFTPServerConnection& operator=(const TFTPServerConnection&) = default;
-     TFTPServerConnection(TFTPServerConnection&& other) = default;
-     TFTPServerConnection(const TFTPServerConnection&) = default;
+     TFTPServerConnection& operator=(TFTPServerConnection&& other) = delete;
+     TFTPServerConnection& operator=(const TFTPServerConnection&) = delete;
+     TFTPServerConnection(TFTPServerConnection&& other) = delete;
+     TFTPServerConnection(const TFTPServerConnection&) = delete;
 
      /* === Core Methods === */
 
