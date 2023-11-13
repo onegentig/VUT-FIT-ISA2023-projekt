@@ -77,9 +77,19 @@ class TFTPServerConnection {
      void handle_upload();
 
      /**
-      * @brief Handles awaiting state (wait for ACK)
+      * @brief Handles download of a data packet
       */
-     void handle_await();
+     void handle_download();
+
+     /**
+      * @brief Handles upload awaiting state (wait for ACK)
+      */
+     void handle_await_upload();
+
+     /**
+      * @brief Handles download awaiting state (wait for DATA)
+      */
+     void handle_await_download();
 
      /* === Getters, setters and checkers === */
 
@@ -158,8 +168,9 @@ class TFTPServerConnection {
      ConnectionState state;           /**< State of the connection */
      std::chrono::steady_clock::time_point
          last_packet_time; /**< Time of last packet */
-     std::array<char, TFTP_MAX_PACKET> buffer{
-         0}; /**< Buffer for incoming packets */
+     std::array<char, TFTP_MAX_PACKET> rx_buffer{
+         0};             /**< Buffer for incoming packets */
+     ssize_t rx_len = 0; /**< Length of the incoming packet */
      socklen_t clt_addr_len
          = sizeof(clt_addr); /**< Length of the client address */
      socklen_t conn_addr_len

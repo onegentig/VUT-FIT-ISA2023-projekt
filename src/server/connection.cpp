@@ -92,8 +92,8 @@ TFTPServerConnection::~TFTPServerConnection() {
      }
 
      /* If download (write) ended with error, remove file */
-     if (this->type == TFTPRequestType::Write
-         && this->state != ConnectionState::Completed) {
+     if (this->is_download() && this->state != ConnectionState::Completed
+         && this->block_n > 0) {
           if (access(this->file_path.c_str(), F_OK) == 0) {
                remove(this->file_path.c_str());
           }
@@ -120,8 +120,13 @@ void TFTPServerConnection::run() {
                case ConnectionState::Uploading:
                     this->handle_upload();
                     break;
+               case ConnectionState::Downloading:
+                    this->handle_download();
+                    break;
                case ConnectionState::Awaiting:
-                    this->handle_await();
+                    this->type == TFTPRequestType::Read
+                        ? this->handle_await_upload()
+                        : this->handle_await_download();
                     break;
                default:
                     // TODO: implement everything
@@ -136,8 +141,10 @@ void TFTPServerConnection::run() {
      }
 }
 
+/* == Uploading (RRQ) flow == */
+
 void TFTPServerConnection::handle_rrq() {
-     log_info("Requesting file " + this->file_path);
+     log_info("Requesting read of file " + this->file_path);
 
      /* Open file for reading */
      this->file_fd = open(this->file_path.c_str(), O_RDONLY);
@@ -151,43 +158,6 @@ void TFTPServerConnection::handle_rrq() {
      /* Things are ready for transfer */
      log_info("File ready, starting upload");
      this->state = ConnectionState::Uploading;
-}
-
-void TFTPServerConnection::handle_wrq() {
-     /* Check if file exists */
-     // @see https://stackoverflow.com/a/12774387
-     if (access(this->file_path.c_str(), F_OK) == 0) {
-          log_error("File already exists");
-          return this->send_error(TFTPErrorCode::FileAlreadyExists,
-                                  "File already exists");
-     }
-
-     /* Create a part file */
-     this->file_fd
-         = open(this->file_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-
-     /* Check if file was created properly */
-     if (this->file_fd < 0) {
-          log_error("Failed to create file");
-          return this->send_error(TFTPErrorCode::AccessViolation,
-                                  "Failed to create file");
-     }
-
-     /* Send ACK for block 0 */
-     AcknowledgementPacket packet = AcknowledgementPacket(0);
-     auto payload = packet.to_binary();
-     if (sendto(this->srv_fd, payload.data(), payload.size(), 0,
-                reinterpret_cast<const sockaddr*>(&this->clt_addr),
-                sizeof(this->clt_addr))
-         < 0) {
-          log_error("Failed to send ACK for block 0");
-          return this->send_error(TFTPErrorCode::Unknown,
-                                  "Failed to send ACK for block 0");
-     }
-
-     /* Things are ready for transfer */
-     log_info("File ready, starting download");
-     this->state = ConnectionState::Downloading;
 }
 
 void TFTPServerConnection::handle_upload() {
@@ -224,7 +194,7 @@ void TFTPServerConnection::handle_upload() {
      this->state = ConnectionState::Awaiting;
 }
 
-void TFTPServerConnection::handle_await() {
+void TFTPServerConnection::handle_await_upload() {
      /* Timeout check */
      // @see https://en.cppreference.com/w/cpp/chrono#Example
      auto now = std::chrono::steady_clock::now();
@@ -248,13 +218,13 @@ void TFTPServerConnection::handle_await() {
      }
 
      /* Receive ACK */
-     ssize_t bytes_rx
-         = recvfrom(this->srv_fd, this->buffer.data(), TFTP_MAX_PACKET, 0,
+     this->rx_len
+         = recvfrom(this->srv_fd, this->rx_buffer.data(), TFTP_MAX_PACKET, 0,
                     reinterpret_cast<struct sockaddr*>(&this->clt_addr),
                     &this->clt_addr_len);
 
      /* Handle errors */
-     if (bytes_rx < 0) {
+     if (this->rx_len < 0) {
           if (errno == EAGAIN || errno == EWOULDBLOCK) {
                /* Nothing to receive, loop in state */
                return;
@@ -266,7 +236,7 @@ void TFTPServerConnection::handle_await() {
      }
 
      /* Parse incoming packet */
-     auto packet_ptr = PacketFactory::create(this->buffer, bytes_rx);
+     auto packet_ptr = PacketFactory::create(this->rx_buffer, this->rx_len);
      if (!packet_ptr) {
           log_error("Received an unparsable packet");
           send_error(TFTPErrorCode::IllegalOperation,
@@ -285,7 +255,7 @@ void TFTPServerConnection::handle_await() {
          = dynamic_cast<AcknowledgementPacket*>(packet_ptr.get());
 
      log_info("Received ACK for block " + std::to_string(this->block_n) + " ("
-              + std::to_string(bytes_rx) + " bytes, is_last is "
+              + std::to_string(this->rx_len) + " bytes, is_last is "
               + std::to_string(this->is_last.load()) + ")");
 
      /* Check if ACK block number is as expected */
@@ -309,8 +279,169 @@ void TFTPServerConnection::handle_await() {
      this->block_n++;
 
      /* Continue transferring */
-     this->state = is_upload() ? ConnectionState::Uploading
-                               : ConnectionState::Downloading;
+     this->state = ConnectionState::Uploading;
+}
+
+/* == Downloading (WRQ) flow == */
+
+void TFTPServerConnection::handle_wrq() {
+     log_info("Requesting write of file " + this->file_path);
+
+     /* Check if file exists */
+     // @see https://stackoverflow.com/a/12774387
+     if (access(this->file_path.c_str(), F_OK) == 0) {
+          log_error("File already exists");
+          return this->send_error(TFTPErrorCode::FileAlreadyExists,
+                                  "File already exists");
+     }
+
+     /* Create a part file */
+     this->file_fd
+         = open(this->file_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+     /* Check if file was created properly */
+     if (this->file_fd < 0) {
+          log_error("Failed to create file");
+          return this->send_error(TFTPErrorCode::AccessViolation,
+                                  "Failed to create file");
+     }
+
+     /* Things are ready for transfer */
+     log_info("File ready, starting download");
+     this->state = ConnectionState::Downloading;
+}
+
+void TFTPServerConnection::handle_download() {
+     AcknowledgementPacket ack = AcknowledgementPacket(this->block_n);
+     this->last_packet_time = std::chrono::steady_clock::now();
+
+     /* If `block_n` is 0 or buffer is empty (=> retransmit), just send ACK */
+     if (this->block_n == 0 || this->rx_len == 0) {
+          log_info("Sending ACK for block " + std::to_string(this->block_n));
+
+          auto payload = ack.to_binary();
+          if (sendto(this->srv_fd, payload.data(), payload.size(), 0,
+                     reinterpret_cast<const sockaddr*>(&this->clt_addr),
+                     sizeof(this->clt_addr))
+              < 0) {
+               log_error("Failed to send ACK for block 0");
+               return this->send_error(TFTPErrorCode::Unknown,
+                                       "Failed to send ACK for block 0");
+          }
+
+          /* Await next data block */
+          this->state = ConnectionState::Awaiting;
+          return;
+     }
+
+     /* Parse data from buffer */
+     DataPacket packet = DataPacket::from_binary(std::vector<char>(
+         this->rx_buffer.begin(), this->rx_buffer.begin() + this->rx_len));
+     auto data = packet.get_data();
+     // bool is_last = data.size() < TFTP_MAX_DATA;
+     if (this->format == TFTPDataFormat::NetASCII) {
+          data = DataPacket::from_netascii(data);
+     }
+
+     log_info("Received block " + std::to_string(this->block_n) + " ("
+              + std::to_string(data.size()) + " bytes)");
+
+     /* Write data to file */
+     if (write(this->file_fd, data.data(), data.size()) < 0) {
+          log_error("Failed to write to file");
+          return this->send_error(TFTPErrorCode::AccessViolation,
+                                  "Failed to write to file");
+     }
+
+     /* Clear buffer */
+     this->rx_buffer.fill(0);
+     this->rx_len = 0;
+
+     /* Send acknowledgement */
+     log_info("Sending ACK for block " + std::to_string(this->block_n));
+     auto payload = ack.to_binary();
+     if (sendto(this->srv_fd, payload.data(), payload.size(), 0,
+                reinterpret_cast<const sockaddr*>(&this->clt_addr),
+                sizeof(this->clt_addr))
+         < 0) {
+          log_error("Failed to send ACK for block " + std::to_string(block_n));
+          return this->send_error(
+              TFTPErrorCode::Unknown,
+              "Failed to send ACK for block " + std::to_string(block_n));
+     }
+
+     /* Check if this was the last data block */
+     if (packet.get_data().size() < TFTP_MAX_DATA) {
+          log_info("Download completed!");
+          this->state = ConnectionState::Completed;
+          return;
+     }
+
+     /* Await next data block */
+     this->state = ConnectionState::Awaiting;
+}
+
+void TFTPServerConnection::handle_await_download() {
+     /* Timeout check */
+     auto now = std::chrono::steady_clock::now();
+     if (std::chrono::duration_cast<std::chrono::seconds>(
+             now - this->last_packet_time)
+             .count()
+         > TFTP_PACKET_TIMEO) {
+          /* Check if TFTP_MAX_RETRIES was reached */
+          if (this->send_tries >= TFTP_MAX_RETRIES + 1) {
+               log_error("Maximum number of retries reached");
+               send_error(TFTPErrorCode::Unknown, "Retransmission timeout");
+               return;
+          }
+
+          log_info("Retransmitting block " + std::to_string(this->block_n)
+                   + " (attempt " + std::to_string(this->send_tries + 1) + ")");
+
+          this->send_tries++;
+          this->state = ConnectionState::Downloading;
+          return;
+     }
+
+     /* Receive data */
+     this->rx_len
+         = recvfrom(this->srv_fd, this->rx_buffer.data(), TFTP_MAX_PACKET, 0,
+                    reinterpret_cast<struct sockaddr*>(&this->clt_addr),
+                    &this->clt_addr_len);
+
+     /* Handle errors */
+     if (this->rx_len < 0) {
+          if (errno == EAGAIN || errno == EWOULDBLOCK) {
+               /* Nothing to receive, loop in state */
+               return;
+          }
+
+          log_error("Failed to receive data: " + std::string(strerror(errno)));
+          send_error(TFTPErrorCode::Unknown, std::string(strerror(errno)));
+          return;
+     }
+
+     /* Parse incoming packet */
+     auto packet_ptr = PacketFactory::create(this->rx_buffer, this->rx_len);
+     if (!packet_ptr) {
+          log_error("Received an unparsable packet");
+          send_error(TFTPErrorCode::IllegalOperation,
+                     "Received an invalid packet");
+          return;
+     }
+
+     if (packet_ptr->get_opcode() != TFTPOpcode::DATA) {
+          log_error("Received a non-DATA packet");
+          send_error(TFTPErrorCode::IllegalOperation,
+                     "Received a non-DATA packet");
+          return;
+     }
+
+     /* Increment block number */
+     this->block_n++;
+
+     /* Go to writing state */
+     this->state = ConnectionState::Downloading;
 }
 
 /* === Helper Methods === */

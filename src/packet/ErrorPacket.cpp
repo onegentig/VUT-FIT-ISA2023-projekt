@@ -69,7 +69,7 @@ ErrorPacket ErrorPacket::from_binary(const std::vector<char>& bin_data) {
      /* Obtain and validate error message */
      if (bin_data.size() > 5) {
           std::string msgStr;
-          std::vector<char> msg_bin(bin_data.begin() + 4, bin_data.end());
+          std::vector<char> msg_bin(bin_data.begin() + 4, bin_data.end() - 1);
           msg_bin = BasePacket::from_netascii(msg_bin);
           msgStr = std::string(msg_bin.begin(), msg_bin.end());
           return ErrorPacket(static_cast<TFTPErrorCode>(errcode), msgStr);
