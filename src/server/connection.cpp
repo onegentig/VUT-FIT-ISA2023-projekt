@@ -339,7 +339,18 @@ void TFTPServerConnection::handle_download() {
      DataPacket packet = DataPacket::from_binary(std::vector<char>(
          this->rx_buffer.begin(), this->rx_buffer.begin() + this->rx_len));
      auto data = packet.get_data();
-     if (this->format == TFTPDataFormat::NetASCII) {
+     if (this->format == TFTPDataFormat::NetASCII && !data.empty()) {
+          /* Adjustment for [... CR] | [LF/NUL ...] block split*/
+          if (this->last_data_cr && data[0] == '\n') {
+               /* CR | LF -> LF */
+               off_t file_size = lseek(this->file_fd, 0, SEEK_END);
+               if (file_size > 0) ftruncate(this->file_fd, file_size - 1);
+               lseek(this->file_fd, 0, SEEK_END);
+          } else if (this->last_data_cr && data[0] == '\0') {
+               /* CR | NUL -> CR */
+               data.erase(data.begin());
+          }
+
           data = DataPacket::from_netascii(data);
      }
 
@@ -352,6 +363,8 @@ void TFTPServerConnection::handle_download() {
           return this->send_error(TFTPErrorCode::AccessViolation,
                                   "Failed to write to file");
      }
+
+     this->last_data_cr = (!data.empty() && data.back() == '\r');
 
      /* Clear buffer */
      this->rx_buffer.fill(0);
