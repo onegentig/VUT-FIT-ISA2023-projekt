@@ -8,18 +8,39 @@
 #include "common.hpp"
 #include "server/server.hpp"
 
+void send_help() {
+     std::cout << "TFTP-Server (ISA 2023 by Kramec Filip)" << std::endl
+               << "Usage: tftp-server [-h] [-p port] <path>" << std::endl
+               << std::endl
+               << " Option       Meaning" << std::endl
+               << "  -h           Show this help message and exit" << std::endl
+               << "  -p port      Port to listen on (default: 69)" << std::endl
+               << "  <path>       Root folder of the TFTP server" << std::endl;
+}
+
 int main(int argc, char* argv[]) {
-     std::string usage = "  Usage: tftp-server [-p port] <path>";
+     /* No options – send help */
+     if (argc == 1) {
+          send_help();
+          return EXIT_SUCCESS;
+     }
+
+     std::string usage
+         = "  Usage: tftp-server [-h] [-p port] <path>\n"
+           "   Try 'tftp-server -h' for more info.";
 
      /* Parse command line options */
      int opt;
      int port = TFTP_PORT;
      std::string rootdir;
-     while ((opt = getopt(argc, argv, "p:")) != -1) {
+     while ((opt = getopt(argc, argv, "hp:")) != -1) {
           switch (opt) {
                case 'p':
                     port = std::stoi(optarg);
                     break;
+               case 'h':
+                    send_help();
+                    return EXIT_SUCCESS;
                default:
                     std::cerr << usage << std::endl;
                     return EXIT_FAILURE;
@@ -49,8 +70,10 @@ int main(int argc, char* argv[]) {
      }
 
      /* Create server */
-     TFTPServer server(rootdir, port);
-     std::cout << ":: Starting TFTP Server..." << std::endl;
-
-     server.start();
+     try {
+          TFTPServer server(rootdir, port);
+          server.start();
+     } catch (const std::exception& e) {
+          std::cerr << "!ERR! " << e.what() << std::endl;
+     }
 }

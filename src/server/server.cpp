@@ -7,8 +7,6 @@
 
 #include "server/server.hpp"
 
-#include <fcntl.h>
-
 /* === Constructors === */
 
 TFTPServer::TFTPServer() : port(TFTP_PORT), rootdir("./") {
@@ -38,18 +36,17 @@ TFTPServer::TFTPServer(std::string rootdir, int port)
 /* === Server Flow === */
 
 void TFTPServer::start() {
+     Logger::glob_op("Starting server...");
+
      /** @see
       * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=21
       */
 
      /* Create socket */
      this->fd = socket(AF_INET, SOCK_DGRAM, 0);
-     if (this->fd == -1) {
-          std::cerr << "!ERR! Failed to create a socket!" << std::endl;
-          return;
-     }
+     if (this->fd == -1) throw std::runtime_error("Failed to create socket");
 
-     std::cout << "  socket created with FD " << this->fd << std::endl;
+     Logger::glob_info("socket created with FD " + std::to_string(this->fd));
 
      /* Set up address */
      memset(&(this->addr), 0, this->addr_len);
@@ -64,48 +61,34 @@ void TFTPServer::start() {
 
      if (setsockopt(this->fd, SOL_SOCKET, SO_RCVTIMEO,
                     reinterpret_cast<char*>(&timeout), sizeof(timeout))
-         < 0) {
-          std::cerr << "!ERR! Failed to set socket timeout!" << std::endl;
-          close(this->fd);
-          return;
-     }
+         < 0)
+          throw std::runtime_error("Failed to set socket timeout");
 
      /* Allow address:port reuse */
      int optval = 1;
      if (setsockopt(this->fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optval,
                     sizeof(optval))
-         < 0) {
-          std::cerr << "!ERR! Failed to set socket options!" << std::endl;
-          close(this->fd);
-          return;
-     }
+         < 0)
+          throw std::runtime_error("Failed to set socket options");
 
      /* Bind socket */
      if (bind(this->fd, reinterpret_cast<struct sockaddr*>(&this->addr),
               addr_len)
-         < 0) {
-          std::cerr << "!ERR! Failed to bind socket!"
-                    << " : " << strerror(errno) << std::endl;
-          close(this->fd);
-          return;
-     }
+         < 0)
+          throw std::runtime_error("Failed to bind socket : "
+                                   + std::string(strerror(errno)));
 
-     std::cout << "  socket bound to " << inet_ntoa(this->addr.sin_addr) << ":"
-               << ntohs(this->addr.sin_port) << std::endl;
+     Logger::glob_info("socket bound to "
+                       + std::string(inet_ntoa(this->addr.sin_addr)) + ":"
+                       + std::to_string(ntohs(this->addr.sin_port)));
 
      /* Make the listening socket non-blocking */
      int flags = fcntl(this->fd, F_GETFL, 0);
-     if (flags < 0) {
-          std::cerr << "!ERR! Failed to get socket flags!" << std::endl;
-          close(this->fd);
-          return;
-     }
+     if (flags < 0) throw std::runtime_error("Failed to get socket flags");
+
      flags |= O_NONBLOCK;
-     if (fcntl(this->fd, F_SETFL, flags) < 0) {
-          std::cerr << "!ERR! Failed to set socket flags!" << std::endl;
-          close(this->fd);
-          return;
-     }
+     if (fcntl(this->fd, F_SETFL, flags) < 0)
+          throw std::runtime_error("Failed to set socket flags");
 
      /* Listen */
      conn_listen();
@@ -113,12 +96,13 @@ void TFTPServer::start() {
 
 void TFTPServer::conn_listen() {
      this->running.store(true);
-     std::cout << ":: Listening for connections..." << std::endl;
+     Logger::glob_op("Listening for connections...");
 
      /** @see
       * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=23
       */
      while (this->running.load()) {
+          /* Prepare all the variables */
           struct sockaddr_in c_addr {};
           socklen_t c_addr_len = sizeof(c_addr);
           std::array<char, TFTP_MAX_PACKET> buffer{0};
@@ -149,25 +133,23 @@ void TFTPServer::conn_listen() {
                     continue;
                }
 
-               std::cerr << "!ERR! Failed to receive data: " << strerror(errno)
-                         << std::endl;
+               Logger::glob_err("Failed to receive data: "
+                                + std::string(strerror(errno)));
                continue;
           }
 
           /* Parse incoming packet */
           auto packet_ptr = PacketFactory::create(buffer, read_size);
           if (!packet_ptr) {
-               std::cerr << "!ERR! Received an unparsable packet!" << std::endl;
+               Logger::glob_err("Received an unparsable packet!");
                continue;
           }
 
-          if (packet_ptr->get_opcode() == TFTPOpcode::ACK) {
+          Logger::packet(*packet_ptr, c_addr);
+
+          if (packet_ptr->get_opcode() != TFTPOpcode::RRQ
+              && packet_ptr->get_opcode() != TFTPOpcode::WRQ) {
                // TODO: Am I supposed to handle this somehow?
-               continue;
-          } else if (packet_ptr->get_opcode() != TFTPOpcode::RRQ
-                     && packet_ptr->get_opcode() != TFTPOpcode::WRQ) {
-               std::cerr << "!ERR! Received a non-request packet!" << std::endl;
-               packet_ptr->hexdump();
                continue;
           }
 
@@ -190,7 +172,7 @@ void TFTPServer::conn_listen() {
 
 void TFTPServer::stop() {
      this->running.store(false);
-     std::cout << "Stopping server..." << std::endl;
+     Logger::glob_op("Stopping server...");
 
      shutdown(this->fd, SHUT_RDWR);
      close(this->fd);
@@ -206,20 +188,17 @@ bool TFTPServer::check_dir() const {
       * https://www.geeksforgeeks.org/how-to-check-a-file-or-directory-exists-in-cpp/
       */
      if (stat(this->rootdir.c_str(), &sb) != 0) {
-          std::cerr << "!ERR! '" << this->rootdir << "' does not seem exist!"
-                    << std::endl;
+          Logger::glob_err("Failed to stat root directory: "
+                           + std::string(strerror(errno)));
           return false;
      } else if (!(sb.st_mode & S_IFDIR)) {
-          std::cerr << "!ERR! '" << this->rootdir << "' is not a directory!"
-                    << std::endl;
+          Logger::glob_err("Root directory is not a directory");
           return false;
      } else if (access(this->rootdir.c_str(), R_OK) != 0) {
-          std::cerr << "!ERR! '" << this->rootdir << "' is not readable!"
-                    << std::endl;
+          Logger::glob_err("Root directory is not readable");
           return false;
      } else if (access(this->rootdir.c_str(), W_OK) != 0) {
-          std::cerr << "!ERR! '" << this->rootdir << "' is not writable!"
-                    << std::endl;
+          Logger::glob_err("Root directory is not writable");
           return false;
      }
 

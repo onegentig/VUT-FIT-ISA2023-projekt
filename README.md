@@ -20,13 +20,13 @@ Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/st
 - [X] Vytvoriť `TFTPServer` a záchyt packetov
 - [X] Vytvoriť `TFTPServerConnection` a TID záchyt packetov
 - [X] V `TFTPServerConnection` implementovať upload flow (`RRQ`)
-- [ ] V `TFTPServerConnection` implementovať download flow (`WRQ`)
+- [X] V `TFTPServerConnection` implementovať download flow (`WRQ`)
 - [ ] `TFTPServer` graceful shutdown
 - [ ] Vytvoriť `client/main.cpp`
 - [ ] Vytvoriť `TFTPClient`
 - [ ] V `TFTPClient` implementovať upload flow (`WRQ`)
 - [ ] V `TFTPClient` implementovať download flow (`RRQ`)
-- [ ] Vytvoriť `PacketLogger` podľa zadania, normalizovať všetky logy
+- [X] Vytvoriť `PacketLogger` podľa zadania, normalizovať všetky logy
 - [ ] Nahradiť multi-threading na niečo iné (select, poll, epoll, …)
 - [ ] …RFC rozšírenia…
 - [ ] ⏰ 2023-11-20 **Deadline**

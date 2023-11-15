@@ -8,11 +8,13 @@
 #pragma once
 #ifndef TFTP_SERVER_HPP
 #     define TFTP_SERVER_HPP
+#     include <fcntl.h>
 #     include <sys/stat.h>
 
 #     include <csignal>
 #     include <memory>
 
+#     include "Logger.hpp"
 #     include "common.hpp"
 #     include "server/connection.hpp"
 

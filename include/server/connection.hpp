@@ -11,6 +11,7 @@
 
 #     include <thread>
 
+#     include "Logger.hpp"
 #     include "common.hpp"
 #     include "packet/PacketFactory.hpp"
 
@@ -139,7 +140,7 @@ class TFTPServerConnection {
       * to standard output.
       */
      void log_info(const std::string& msg) const {
-          std::cout << "  [" << this->tid << "] - INFO  - " << msg << std::endl;
+          Logger::conn_info(std::to_string(this->tid), msg);
      };
 
      /**
@@ -147,7 +148,7 @@ class TFTPServerConnection {
       * to standard output.
       */
      void log_error(const std::string& msg) const {
-          std::cout << "  [" << this->tid << "] - ERROR - " << msg << std::endl;
+          Logger::conn_err(std::to_string(this->tid), msg);
      };
 
    protected:
