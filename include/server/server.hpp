@@ -49,7 +49,7 @@ class TFTPServer {
       * @brief Deconstructs the TFTP server object.
       */
      ~TFTPServer() {
-          if (this->running.load()) this->stop();
+          if (this->fd > 0) this->stop();
      }
 
      TFTPServer& operator=(TFTPServer&& other) = default;
@@ -60,14 +60,14 @@ class TFTPServer {
      /* === Core Methods === */
 
      /**
-      * @brief Starts the TFTP server.
+      * @brief Starts the TFTP server
       * @return true when started successfully,
       * @return false otherwise
       */
      void start();
 
      /**
-      * @brief Stops the TFTP server.
+      * @brief Stops the TFTP server
       */
      void stop();
 
@@ -75,20 +75,21 @@ class TFTPServer {
      int fd;                            /**< Socket file descriptor */
      int port;                          /**< Port to listen on */
      std::string rootdir;               /**< Root directory of the server */
-     std::atomic<bool> running;         /**< Server running flag */
      struct sockaddr_in addr {};        /**< Socket address */
      socklen_t addr_len = sizeof(addr); /**< Socket address length */
      std::vector<std::shared_ptr<TFTPServerConnection>>
-         connections; /**< Connection thread pool */
+         connections; /**< Connection thread vector */
+     std::shared_ptr<std::atomic<bool>>
+         shutd_flag; /**< Flag to signal shutdown */
 
      /**
-      * @brief Listens for incoming connections.
+      * @brief Listens for incoming connections
       */
      void conn_listen();
 
      /**
-      * @brief Validates the rootdir (must be a readable
-      * and writable directory)
+      * @brief Validates that the rootdir is a valid, readable and writable
+      * directory
       * @return true when valid,
       * @return false otherwise
       */

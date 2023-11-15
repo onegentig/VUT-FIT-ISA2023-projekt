@@ -7,18 +7,30 @@
 
 #include "server/server.hpp"
 
+/**
+ * @brief SIGINT flag
+ * @details Atomic flag indicating whether SIGINT was recieved,
+ * used to gracefully terminate server's connections.
+ */
+std::atomic<bool> quit(false);
+
+/**
+ * @brief Sets the quit flag to true on SIGINT.
+ * @param signal - signal number
+ */
+void signal_handler(int signal) {
+     (void)signal;
+     quit.store(true);
+}
+
 /* === Constructors === */
 
-TFTPServer::TFTPServer() : port(TFTP_PORT), rootdir("./") {
-     this->running.store(false);
-}
+TFTPServer::TFTPServer() : port(TFTP_PORT), rootdir("./") {}
 
 TFTPServer::TFTPServer(std::string rootdir)
     : port(TFTP_PORT), rootdir(std::move(rootdir)) {
      /* Verify root directory */
      if (!this->check_dir()) throw std::runtime_error("Invalid root directory");
-
-     this->running.store(false);
 }
 
 TFTPServer::TFTPServer(std::string rootdir, int port)
@@ -29,8 +41,6 @@ TFTPServer::TFTPServer(std::string rootdir, int port)
 
      /* Verify root directory */
      if (!this->check_dir()) throw std::runtime_error("Invalid root directory");
-
-     this->running.store(false);
 }
 
 /* === Server Flow === */
@@ -48,13 +58,13 @@ void TFTPServer::start() {
 
      Logger::glob_info("socket created with FD " + std::to_string(this->fd));
 
-     /* Set up address */
+     /* Set address */
      memset(&(this->addr), 0, this->addr_len);
      this->addr.sin_family = AF_INET;
      this->addr.sin_port = htons(port);
      this->addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-     /* Set up timeout */
+     /* Set timeout */
      struct timeval timeout {
           TFTP_TIMEO, 0
      };
@@ -90,18 +100,29 @@ void TFTPServer::start() {
      if (fcntl(this->fd, F_SETFL, flags) < 0)
           throw std::runtime_error("Failed to set socket flags");
 
+     /* Set up signal handler */
+     /** @see https://gist.github.com/aspyct/3462238 */
+     struct sigaction sig_act {};
+     memset(&sig_act, 0, sizeof(sig_act));
+     sig_act.sa_handler = signal_handler;
+     sigfillset(&sig_act.sa_mask);
+     sigaction(SIGINT, &sig_act, NULL);
+     this->shutd_flag = std::make_shared<std::atomic<bool>>(false);
+
      /* Listen */
      conn_listen();
 }
 
 void TFTPServer::conn_listen() {
-     this->running.store(true);
      Logger::glob_op("Listening for connections...");
 
      /** @see
       * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=23
       */
-     while (this->running.load()) {
+     while (true) {
+          /* Check for SIGINT */
+          if (quit.load()) return this->stop();
+
           /* Prepare all the variables */
           struct sockaddr_in c_addr {};
           socklen_t c_addr_len = sizeof(c_addr);
@@ -157,22 +178,40 @@ void TFTPServer::conn_listen() {
 
           /* Instantiate connection instance */
           auto conn = std::make_shared<TFTPServerConnection>(
-              this->fd, c_addr, *req_packet_ptr, this->rootdir);
+              this->fd, c_addr, *req_packet_ptr, this->rootdir,
+              this->shutd_flag);
           this->connections.push_back(conn);
 
-          /* Execute connection in a separate thread */
+          /* Exec connection in a separate thread */
           std::thread tConn(&TFTPServerConnection::run, conn);
           tConn.detach();
 
-          /* Short sleep (makes the loop a bit less CPU-heavy) */
+          /* Short sleep (to not overload CPU) */
           std::this_thread::sleep_for(
               std::chrono::milliseconds(TFTP_THREAD_DELAY));
      }
 }
 
 void TFTPServer::stop() {
-     this->running.store(false);
      Logger::glob_op("Stopping server...");
+
+     /* Set shared shutdown flag */
+     this->shutd_flag->store(true);
+
+     /* Wait for all connections to shutdown */
+     while (!connections.empty()) {
+          /* Erase closed connections */
+          connections.erase(
+              std::remove_if(
+                  connections.begin(), connections.end(),
+                  [](const std::shared_ptr<TFTPServerConnection>& conn) {
+                       return !conn->is_running();
+                  }),
+              connections.end());
+
+          std::this_thread::sleep_for(
+              std::chrono::milliseconds(TFTP_THREAD_DELAY));
+     }
 
      shutdown(this->fd, SHUT_RDWR);
      close(this->fd);
