@@ -9,11 +9,11 @@
 
 /* === Constructors === */
 
-TFTPServerConnection::TFTPServerConnection(int srv_fd,
-                                           const sockaddr_in& clt_addr,
-                                           const RequestPacket& reqPacket,
-                                           const std::string& rootDir)
-    : srv_fd(srv_fd), clt_addr(clt_addr) {
+TFTPServerConnection::TFTPServerConnection(
+    int srv_fd, const sockaddr_in& clt_addr, const RequestPacket& reqPacket,
+    const std::string& rootDir,
+    const std::shared_ptr<std::atomic<bool>>& shutd_flag)
+    : srv_fd(srv_fd), clt_addr(clt_addr), shutd_flag(*shutd_flag) {
      this->state = ConnectionState::Requested;
      file_path = rootDir + "/" + reqPacket.get_filename();
      type = reqPacket.get_type();
@@ -27,13 +27,13 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
           return;
      }
 
-     /* Set up address */
+     /* Set address */
      memset(&(this->conn_addr), 0, this->conn_addr_len);
      this->conn_addr.sin_family = AF_INET;
      this->conn_addr.sin_port = htons(0);  // Random port
      this->conn_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-     /* Set up timeout */
+     /* Set timeout */
      struct timeval timeout {
           TFTP_TIMEO, 0
      };
@@ -112,6 +112,13 @@ TFTPServerConnection::~TFTPServerConnection() {
 
 void TFTPServerConnection::run() {
      while (this->is_running()) {
+          /* Check shutdown flag */
+          if (this->shutd_flag.load()) {
+               log_info("Shutting down (shutd_flag detected)");
+               return send_error(TFTPErrorCode::Unknown, "Terminated by user");
+          }
+
+          /* Handle state */
           switch (this->state) {
                case ConnectionState::Requested:
                     this->type == TFTPRequestType::Read ? this->handle_rrq()
@@ -270,6 +277,7 @@ void TFTPServerConnection::handle_await_upload() {
 
      /* Increment block number */
      this->block_n++;
+     this->send_tries = 0;
 
      /* Continue transferring */
      this->state = ConnectionState::Uploading;
@@ -281,7 +289,7 @@ void TFTPServerConnection::handle_wrq() {
      log_info("Requesting write of file " + this->file_path);
 
      /* Check if file exists */
-     // @see https://stackoverflow.com/a/12774387
+     /** @see https://stackoverflow.com/a/12774387 */
      if (access(this->file_path.c_str(), F_OK) == 0) {
           log_error("File already exists");
           return this->send_error(TFTPErrorCode::FileAlreadyExists,
@@ -289,8 +297,8 @@ void TFTPServerConnection::handle_wrq() {
      }
 
      /* Create a part file */
-     this->file_fd
-         = open(this->file_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+     this->file_fd = open(this->file_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC,
+                          S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
      /* Check if file was created properly */
      if (this->file_fd < 0) {
@@ -331,7 +339,6 @@ void TFTPServerConnection::handle_download() {
      DataPacket packet = DataPacket::from_binary(std::vector<char>(
          this->rx_buffer.begin(), this->rx_buffer.begin() + this->rx_len));
      auto data = packet.get_data();
-     // bool is_last = data.size() < TFTP_MAX_DATA;
      if (this->format == TFTPDataFormat::NetASCII) {
           data = DataPacket::from_netascii(data);
      }
@@ -434,6 +441,7 @@ void TFTPServerConnection::handle_await_download() {
 
      /* Increment block number */
      this->block_n++;
+     this->send_tries = 0;
 
      /* Go to writing state */
      this->state = ConnectionState::Downloading;

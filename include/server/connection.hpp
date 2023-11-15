@@ -16,7 +16,7 @@
 #     include "packet/PacketFactory.hpp"
 
 /**
- * @brief Enumeration to represent possible states of a connection
+ * @brief Enumeration for all possible states of a connection
  */
 enum class ConnectionState {
      Requested,   /**< Initial transitory state entered on WRQ/RRQ */
@@ -39,13 +39,15 @@ class TFTPServerConnection {
       * @param clt_addr Client address
       * @param req_packet Request packet (RRQ / WRQ)
       * @param root_dir Server root directory
+      * @param shutd_flag Shared shutdown flag
       */
      TFTPServerConnection(int srv_fd, const sockaddr_in& clt_addr,
                           const RequestPacket& req_packet,
-                          const std::string& root_dir);
+                          const std::string& root_dir,
+                          const std::shared_ptr<std::atomic<bool>>& shutd_flag);
 
      /**
-      * @brief Destroys the TFTPServerConnection object
+      * @brief Destroys the connection
       */
      ~TFTPServerConnection();
 
@@ -62,7 +64,7 @@ class TFTPServerConnection {
      void run();
 
      /**
-      * @brief Handles a read request.
+      * @brief Handles a read request
       */
      void handle_rrq();
 
@@ -95,7 +97,7 @@ class TFTPServerConnection {
 
      /**
       * @brief Checks if the connection is running
-      * @return true if running
+      * @return true if running,
       * @return false otherwise
       */
      bool is_running() const {
@@ -105,7 +107,7 @@ class TFTPServerConnection {
 
      /**
       * @brief Checks if the connection is transfering
-      * @return true if transfering
+      * @return true if transfering,
       * @return false otherwise
       */
      bool is_transfering() const {
@@ -115,14 +117,14 @@ class TFTPServerConnection {
 
      /**
       * @brief Checks if the connection is an upload (read from server)
-      * @return true if upload
+      * @return true if upload,
       * @return false otherwise
       */
      bool is_upload() const { return this->type == TFTPRequestType::Read; }
 
      /**
       * @brief Checks if the connection is a download (write to server)
-      * @return true if download
+      * @return true if download,
       * @return false otherwise
       */
      bool is_download() const { return this->type == TFTPRequestType::Write; }
@@ -165,6 +167,7 @@ class TFTPServerConnection {
      TFTPRequestType type;            /**< Request type (RRQ / WRQ) */
      TFTPDataFormat format;           /**< Transfer format */
      ConnectionState state;           /**< State of the connection */
+     std::atomic<bool>& shutd_flag;   /**< Flag to signal shutdown */
      std::chrono::steady_clock::time_point
          last_packet_time; /**< Time of last packet */
      std::array<char, TFTP_MAX_PACKET> rx_buffer{
