@@ -48,35 +48,35 @@ std::vector<char> DataPacket::read_file_data() const {
      /* Binary data can be directly cut and returned */
      if (mode == TFTPDataFormat::Octet) {
           char data[TFTP_MAX_DATA];
-          ssize_t bytesRead = read(fd, data, TFTP_MAX_DATA);
-          if (bytesRead == -1)
+          ssize_t bytes_rx = read(fd, data, TFTP_MAX_DATA);
+          if (bytes_rx == -1)
                throw std::runtime_error("Could not read file (0 bytes read)");
 
-          return std::vector<char>(data, data + bytesRead);
+          return std::vector<char>(data, data + bytes_rx);
      }
 
      /* NetASCII data must be properly encoded – for size adjustment, must be
       * converted from start */
-     off_t bytes_rx = 0;
+     off_t bytes_all = 0;
      off_t ofst_last = block_n * TFTP_MAX_DATA;
      std::vector<char> buffer;
-     while (bytes_rx < ofst_last) {
+     while (bytes_all < ofst_last) {
           std::vector<char> chunk(TFTP_MAX_DATA);
-          ssize_t bytesRead = read(fd, chunk.data(), chunk.size());
+          ssize_t bytes_rx = read(fd, chunk.data(), chunk.size());
 
-          if (bytesRead == -1) {
+          if (bytes_rx == -1) {
                throw std::runtime_error("Could not read file (-1 error)");
-          } else if (bytesRead == 0) {
+          } else if (bytes_rx == 0) {
                break;  // EOF
           }
 
           /* Convert to NetASCII */
-          chunk.resize(bytesRead);
+          chunk.resize(bytes_rx);
           chunk = BasePacket::to_netascii(chunk);
 
           /* Add to buffer */
           buffer.insert(buffer.end(), chunk.begin(), chunk.end());
-          bytes_rx += bytesRead;
+          bytes_all += bytes_rx;
      }
 
      /* Cut the last MAX_DATA_SIZE */
