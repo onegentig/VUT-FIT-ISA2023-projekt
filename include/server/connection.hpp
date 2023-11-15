@@ -168,6 +168,7 @@ class TFTPServerConnection {
      TFTPDataFormat format;           /**< Transfer format */
      ConnectionState state;           /**< State of the connection */
      std::atomic<bool>& shutd_flag;   /**< Flag to signal shutdown */
+     bool last_data_cr = false;       /**< Flag if last DATA ended with CR */
      std::chrono::steady_clock::time_point
          last_packet_time; /**< Time of last packet */
      std::array<char, TFTP_MAX_PACKET> rx_buffer{
