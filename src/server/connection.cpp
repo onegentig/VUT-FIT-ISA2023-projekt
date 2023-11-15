@@ -22,7 +22,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
      /* Create socket */
      this->conn_fd = socket(AF_INET, SOCK_DGRAM, 0);
      if (this->conn_fd == -1) {
-          std::cerr << "!ERR! Failed to create a socket!" << std::endl;
+          Logger::glob_err("Failed to create a socket for connection!");
           this->state = ConnectionState::Errored;
           return;
      }
@@ -41,7 +41,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
      if (setsockopt(this->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
                     sizeof(timeout))
          < 0) {
-          std::cerr << "!ERR! Failed to set timeout!" << std::endl;
+          Logger::glob_err("Failed to set socket timeout for connection!");
           this->state = ConnectionState::Errored;
           return;
      }
@@ -51,7 +51,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
      if (setsockopt(this->conn_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
                     &optval, sizeof(optval))
          < 0) {
-          std::cerr << "!ERR! Failed to set socket options!" << std::endl;
+          Logger::glob_err("Failed to set socket reuse for connection!");
           this->state = ConnectionState::Errored;
           return;
      }
@@ -61,8 +61,7 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
               reinterpret_cast<struct sockaddr*>(&this->conn_addr),
               this->conn_addr_len)
          < 0) {
-          std::cerr << "!ERR! Failed to bind socket!"
-                    << " : " << strerror(errno) << std::endl;
+          Logger::glob_err("Failed to bind socket for connection!");
           this->state = ConnectionState::Errored;
           return;
      }
@@ -72,16 +71,16 @@ TFTPServerConnection::TFTPServerConnection(int srv_fd,
                      reinterpret_cast<struct sockaddr*>(&this->conn_addr),
                      &(this->conn_addr_len))
          < 0) {
-          std::cerr << "!ERR! Failed to get socket name!"
-                    << " : " << strerror(errno) << std::endl;
+          Logger::glob_err("Failed to get socket name for connection!");
           this->state = ConnectionState::Errored;
           return;
      }
 
      this->tid = ntohs(this->conn_addr.sin_port);
-     std::cout << "==> New connection [" << this->tid << "]"
-               << " from " << inet_ntoa(this->clt_addr.sin_addr) << ":"
-               << ntohs(this->clt_addr.sin_port) << std::endl;
+     Logger::glob_event("New connection [" + std::to_string(this->tid) + "]"
+                        + " from "
+                        + std::string(inet_ntoa(this->clt_addr.sin_addr)) + ":"
+                        + std::to_string(ntohs(this->clt_addr.sin_port)));
 }
 
 TFTPServerConnection::~TFTPServerConnection() {
@@ -105,7 +104,8 @@ TFTPServerConnection::~TFTPServerConnection() {
           this->file_fd = -1;
      }
 
-     std::cout << "==> Closed connection [" << this->tid << "]" << std::endl;
+     Logger::glob_event("Closed connection [" + std::to_string(this->tid)
+                        + "]");
 }
 
 /* === Connection Flow === */
@@ -173,9 +173,8 @@ void TFTPServerConnection::handle_upload() {
           this->is_last.store(false);
      }
 
-     log_info("Sending block " + std::to_string(this->block_n) + " ("
-              + std::to_string(payload.size()) + " bytes, is_last is "
-              + std::to_string(static_cast<int>(this->is_last.load())) + ")");
+     log_info("Sending DATA block " + std::to_string(this->block_n) + " ("
+              + std::to_string(payload.size()) + " bytes)");
 
      /* Send data */
      sendto(this->srv_fd, payload.data(), payload.size(), 0,
@@ -237,6 +236,8 @@ void TFTPServerConnection::handle_await_upload() {
           return;
      }
 
+     Logger::packet(*packet_ptr, this->clt_addr, this->conn_addr);
+
      if (packet_ptr->get_opcode() != TFTPOpcode::ACK) {
           log_error("Received a non-ACK packet");
           send_error(TFTPErrorCode::IllegalOperation,
@@ -248,8 +249,7 @@ void TFTPServerConnection::handle_await_upload() {
          = dynamic_cast<AcknowledgementPacket*>(packet_ptr.get());
 
      log_info("Received ACK for block " + std::to_string(this->block_n) + " ("
-              + std::to_string(this->rx_len) + " bytes, is_last is "
-              + std::to_string(static_cast<int>(this->is_last.load())) + ")");
+              + std::to_string(this->rx_len) + " bytes)");
 
      /* Check if ACK block number is as expected */
      if (ack_packet_ptr->get_block_number() < this->block_n) {
@@ -422,6 +422,8 @@ void TFTPServerConnection::handle_await_download() {
                      "Received an invalid packet");
           return;
      }
+
+     Logger::packet(*packet_ptr, this->clt_addr, this->conn_addr);
 
      if (packet_ptr->get_opcode() != TFTPOpcode::DATA) {
           log_error("Received a non-DATA packet");
