@@ -69,7 +69,7 @@ CLASS_OBJS             := $(filter-out %main.o, $(OBJS))
 
 ###############################################################################
 
-.PHONY: all release debug help test clean tar zip lint format
+.PHONY: all release debug server client help test clean tar zip lint format
 
 all: release
 
@@ -80,6 +80,12 @@ release: $(CLIENT_TARGET) $(SERVER_TARGET)
 
 debug: EXTRA_CPPFLAGS += ${DEBUG_CPPFLAGS}
 debug: $(CLIENT_TARGET) $(SERVER_TARGET)
+
+server: EXTRA_CPPFLAGS += ${RELEASE_CPPFLAGS}
+server: $(SERVER_TARGET)
+
+client: EXTRA_CPPFLAGS += ${RELEASE_CPPFLAGS}
+client: $(CLIENT_TARGET)
 
 $(CLIENT_TARGET): $(CLIENT_OBJS) $(PACKET_OBJS)
 	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CLIENT_OBJS) $(PACKET_OBJS) -o $(CLIENT_TARGET)
@@ -131,6 +137,8 @@ help:
 	@echo "TARGETs:"
 	@echo "  all     compile and link the project (default)"
 	@echo "  debug   compile and link the project with debug flags"
+	@echo "  server  only compile and link the server"
+	@echo "  client  only compile and link the client"
 	@echo "  clean   clean built objects, executables and archives"
 	@echo "  format  run formatter"
 	@echo "  lint    run linter"
