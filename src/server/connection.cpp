@@ -184,7 +184,7 @@ void TFTPServerConnection::handle_upload() {
               + std::to_string(payload.size()) + " bytes)");
 
      /* Send data */
-     sendto(this->srv_fd, payload.data(), payload.size(), 0,
+     sendto(this->conn_fd, payload.data(), payload.size(), 0,
             reinterpret_cast<const sockaddr*>(&this->clt_addr),
             sizeof(this->clt_addr));
 
@@ -218,7 +218,7 @@ void TFTPServerConnection::handle_await_upload() {
 
      /* Receive ACK */
      this->rx_len
-         = recvfrom(this->srv_fd, this->rx_buffer.data(), TFTP_MAX_PACKET, 0,
+         = recvfrom(this->conn_fd, this->rx_buffer.data(), TFTP_MAX_PACKET, 0,
                     reinterpret_cast<struct sockaddr*>(&this->clt_addr),
                     &this->clt_addr_len);
 
@@ -321,7 +321,7 @@ void TFTPServerConnection::handle_download() {
           log_info("Sending ACK for block " + std::to_string(this->block_n));
 
           auto payload = ack.to_binary();
-          if (sendto(this->srv_fd, payload.data(), payload.size(), 0,
+          if (sendto(this->conn_fd, payload.data(), payload.size(), 0,
                      reinterpret_cast<const sockaddr*>(&this->clt_addr),
                      sizeof(this->clt_addr))
               < 0) {
@@ -373,7 +373,7 @@ void TFTPServerConnection::handle_download() {
      /* Send acknowledgement */
      log_info("Sending ACK for block " + std::to_string(this->block_n));
      auto payload = ack.to_binary();
-     if (sendto(this->srv_fd, payload.data(), payload.size(), 0,
+     if (sendto(this->conn_fd, payload.data(), payload.size(), 0,
                 reinterpret_cast<const sockaddr*>(&this->clt_addr),
                 sizeof(this->clt_addr))
          < 0) {
@@ -418,7 +418,7 @@ void TFTPServerConnection::handle_await_download() {
 
      /* Receive data */
      this->rx_len
-         = recvfrom(this->srv_fd, this->rx_buffer.data(), TFTP_MAX_PACKET, 0,
+         = recvfrom(this->conn_fd, this->rx_buffer.data(), TFTP_MAX_PACKET, 0,
                     reinterpret_cast<struct sockaddr*>(&this->clt_addr),
                     &this->clt_addr_len);
 
@@ -467,7 +467,7 @@ void TFTPServerConnection::send_error(TFTPErrorCode code,
      ErrorPacket res = ErrorPacket(code, message);
      auto payload = res.to_binary();
 
-     sendto(this->srv_fd, payload.data(), payload.size(), 0,
+     sendto(this->conn_fd, payload.data(), payload.size(), 0,
             reinterpret_cast<const sockaddr*>(&this->clt_addr),
             sizeof(this->clt_addr));
 
