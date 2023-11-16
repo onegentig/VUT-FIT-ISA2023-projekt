@@ -9,7 +9,7 @@
 /* === Constants === */
 
 /**
- * @brief Maximum size of a TFTP data packet data block.
+ * @brief Maximum size of a TFTP DATA block.
  */
 static const size_t TFTP_MAX_DATA = 512;
 
@@ -17,6 +17,11 @@ static const size_t TFTP_MAX_DATA = 512;
  * @brief Maximum size of a TFTP packet.
  */
 static const size_t TFTP_MAX_PACKET = TFTP_MAX_DATA + 4;
+
+/**
+ * @brief Maximum number of blocks TFTP can transfer.
+ */
+static const uint16_t TFTP_MAX_FILE_BLOCKS = 0xFFFF;
 
 /**
  * @brief Default TFTP port

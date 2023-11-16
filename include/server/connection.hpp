@@ -9,6 +9,8 @@
 #ifndef TFTP_CONNECTION_HPP
 #     define TFTP_CONNECTION_HPP
 
+#     include <sys/stat.h>
+
 #     include <thread>
 
 #     include "Logger.hpp"
@@ -94,6 +96,15 @@ class TFTPServerConnection {
      void handle_await_download();
 
      /* === Getters, setters and checkers === */
+
+     /**
+      * @brief Gets the block_n string in hexadecimal uppercase
+      */
+     std::string get_block_n_hex() const {
+          std::stringstream sstream;
+          sstream << std::hex << std::uppercase << this->block_n;
+          return sstream.str();
+     }
 
      /**
       * @brief Checks if the connection is running
