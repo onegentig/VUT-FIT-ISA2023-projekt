@@ -232,7 +232,7 @@ void TFTPServerConnection::handle_await_upload() {
              .count()
          > TFTP_PACKET_TIMEO) {
           /* Check if TFTP_MAX_RETRIES was reached */
-          if (this->send_tries >= TFTP_MAX_RETRIES + 1) {
+          if (this->send_tries + 1 >= TFTP_MAX_RETRIES) {
                log_error("Maximum number of retries reached");
                send_error(TFTPErrorCode::Unknown, "Retransmission timeout");
                return;
@@ -347,7 +347,7 @@ void TFTPServerConnection::handle_download() {
      this->last_packet_time = std::chrono::steady_clock::now();
 
      /* If `block_n` is 0 or buffer is empty (=> retransmit), just send ACK */
-     if (this->block_n == 0 || this->rx_len == 0) {
+     if (this->block_n == 0 || this->rx_len <= 0) {
           log_info("Sending ACK for block " + this->get_block_n_hex());
 
           auto payload = ack.to_binary();
@@ -432,13 +432,13 @@ void TFTPServerConnection::handle_await_download() {
              .count()
          > TFTP_PACKET_TIMEO) {
           /* Check if TFTP_MAX_RETRIES was reached */
-          if (this->send_tries >= TFTP_MAX_RETRIES + 1) {
+          if (this->send_tries + 1 >= TFTP_MAX_RETRIES) {
                log_error("Maximum number of retries reached");
                send_error(TFTPErrorCode::Unknown, "Retransmission timeout");
                return;
           }
 
-          log_info("Retransmitting block " + this->get_block_n_hex()
+          log_info("Retransmitting ACK for block " + this->get_block_n_hex()
                    + " (attempt " + std::to_string(this->send_tries + 1) + ")");
 
           this->send_tries++;
