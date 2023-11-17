@@ -381,7 +381,7 @@ void TFTPServerConnection::handle_download() {
                data.erase(data.begin());
           }
 
-          data = DataPacket::from_netascii(data);
+          data = NetASCII::from_netascii(data);
      }
 
      log_info("Received block " + this->get_block_n_hex() + " ("
