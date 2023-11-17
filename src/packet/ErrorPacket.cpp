@@ -35,8 +35,7 @@ std::vector<char> ErrorPacket::to_binary() const {
 
      /* Insert error message to vector */
      if (msg.has_value()) {
-          std::vector<char> msg_bin = NetASCII::to_netascii(
-              std::vector<char>(msg.value().begin(), msg.value().end()));
+          std::vector<char> msg_bin = NetASCII::str_to_na(msg.value());
           bin_data.insert(bin_data.end(), msg_bin.begin(), msg_bin.end());
      }
 
@@ -68,11 +67,9 @@ ErrorPacket ErrorPacket::from_binary(const std::vector<char>& bin_data) {
 
      /* Obtain and validate error message */
      if (bin_data.size() > 5) {
-          std::string msgStr;
           std::vector<char> msg_bin(bin_data.begin() + 4, bin_data.end() - 1);
-          msg_bin = NetASCII::from_netascii(msg_bin);
-          msgStr = std::string(msg_bin.begin(), msg_bin.end());
-          return ErrorPacket(static_cast<TFTPErrorCode>(errcode), msgStr);
+          std::string msg_str = NetASCII::na_to_str(msg_bin);
+          return ErrorPacket(static_cast<TFTPErrorCode>(errcode), msg_str);
      }
 
      return ErrorPacket(static_cast<TFTPErrorCode>(errcode));

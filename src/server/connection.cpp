@@ -153,11 +153,9 @@ void TFTPServerConnection::handle_rrq() {
      log_info("Requesting read of file " + this->file_path);
 
      /* Check if file exists */
-     if (access(this->file_path.c_str(), F_OK) != 0) {
-          log_error("File does not exist");
+     if (access(this->file_path.c_str(), F_OK) != 0)
           return this->send_error(TFTPErrorCode::FileNotFound,
                                   "File does not exist");
-     }
 
      /* Open file for reading */
      this->file_fd = open(this->file_path.c_str(), O_RDONLY);
@@ -176,7 +174,6 @@ void TFTPServerConnection::handle_rrq() {
                errmsg = "Failed to open file";
           }
 
-          log_error(errmsg);
           return this->send_error(errcode, errmsg);
      }
 
@@ -187,7 +184,6 @@ void TFTPServerConnection::handle_rrq() {
          || st.st_size > static_cast<off_t>(TFTP_MAX_DATA * TFTP_MAX_FILE_BLOCKS
                                             - 1)) {
           close(this->file_fd);
-          log_error("File too big");
           return this->send_error(TFTPErrorCode::Unknown, "File too big");
      }
 
@@ -259,28 +255,22 @@ void TFTPServerConnection::handle_await_upload() {
                return;
           }
 
-          log_error("Failed to receive ACK: " + std::string(strerror(errno)));
+          log_error("Failed to receive ACK:");
           send_error(TFTPErrorCode::Unknown, std::string(strerror(errno)));
           return;
      }
 
      /* Parse incoming packet */
      auto packet_ptr = PacketFactory::create(this->rx_buffer, this->rx_len);
-     if (!packet_ptr) {
-          log_error("Received an unparsable packet");
-          send_error(TFTPErrorCode::IllegalOperation,
-                     "Received an invalid packet");
-          return;
-     }
+     if (!packet_ptr)
+          return send_error(TFTPErrorCode::IllegalOperation,
+                            "Received an invalid packet");
 
      Logger::packet(*packet_ptr, this->clt_addr, this->conn_addr);
 
-     if (packet_ptr->get_opcode() != TFTPOpcode::ACK) {
-          log_error("Received a non-ACK packet");
-          send_error(TFTPErrorCode::IllegalOperation,
-                     "Received a non-ACK packet");
-          return;
-     }
+     if (packet_ptr->get_opcode() != TFTPOpcode::ACK)
+          return send_error(TFTPErrorCode::IllegalOperation,
+                            "Received a non-ACK packet");
 
      auto* ack_packet_ptr
          = dynamic_cast<AcknowledgementPacket*>(packet_ptr.get());
@@ -292,10 +282,8 @@ void TFTPServerConnection::handle_await_upload() {
      if (ack_packet_ptr->get_block_number() < this->block_n) {
           return;  // Stray past ACK, ignore.
      } else if (ack_packet_ptr->get_block_number() > this->block_n) {
-          log_error("Received an ACK with a future block number");
-          send_error(TFTPErrorCode::IllegalOperation,
-                     "Received an ACK with a future block number");
-          return;
+          return send_error(TFTPErrorCode::IllegalOperation,
+                            "Received an ACK with a future block number");
      }
 
      /* Check if this is the last packet */
@@ -306,6 +294,10 @@ void TFTPServerConnection::handle_await_upload() {
      }
 
      /* Increment block number */
+     if (this->block_n == TFTP_MAX_FILE_BLOCKS)
+          return send_error(TFTPErrorCode::Unknown,
+                            "Block overflow (file too big)");
+
      this->block_n++;
      this->send_tries = 0;
 
@@ -320,22 +312,18 @@ void TFTPServerConnection::handle_wrq() {
 
      /* Check if file exists */
      /** @see https://stackoverflow.com/a/12774387 */
-     if (access(this->file_path.c_str(), F_OK) == 0) {
-          log_error("File already exists");
+     if (access(this->file_path.c_str(), F_OK) == 0)
           return this->send_error(TFTPErrorCode::FileAlreadyExists,
                                   "File already exists");
-     }
 
      /* Create a part file */
      this->file_fd = open(this->file_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC,
                           S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
      /* Check if file was created properly */
-     if (this->file_fd < 0) {
-          log_error("Failed to create file");
+     if (this->file_fd < 0)
           return this->send_error(TFTPErrorCode::AccessViolation,
-                                  "Failed to create file");
-     }
+                                  "Could not create file");
 
      /* Things are ready for transfer */
      log_info("File ready, starting download");
@@ -354,11 +342,9 @@ void TFTPServerConnection::handle_download() {
           if (sendto(this->conn_fd, payload.data(), payload.size(), 0,
                      reinterpret_cast<const sockaddr*>(&this->clt_addr),
                      sizeof(this->clt_addr))
-              < 0) {
-               log_error("Failed to send ACK for block 0");
+              < 0)
                return this->send_error(TFTPErrorCode::Unknown,
                                        "Failed to send ACK for block 0");
-          }
 
           /* Await next data block */
           this->state = ConnectionState::Awaiting;
@@ -374,25 +360,25 @@ void TFTPServerConnection::handle_download() {
           if (this->last_data_cr && data[0] == '\n') {
                /* CR | LF -> LF */
                off_t file_size = lseek(this->file_fd, 0, SEEK_END);
-               if (file_size > 0) ftruncate(this->file_fd, file_size - 1);
+               if (file_size > 0 && ftruncate(this->file_fd, file_size - 1))
+                    return this->send_error(TFTPErrorCode::AccessViolation,
+                                            "Failed to truncate file");
                lseek(this->file_fd, 0, SEEK_END);
           } else if (this->last_data_cr && data[0] == '\0') {
                /* CR | NUL -> CR */
                data.erase(data.begin());
           }
 
-          data = NetASCII::from_netascii(data);
+          data = NetASCII::na_to_vec(data);
      }
 
      log_info("Received block " + this->get_block_n_hex() + " ("
               + std::to_string(data.size()) + " bytes)");
 
      /* Write data to file */
-     if (write(this->file_fd, data.data(), data.size()) < 0) {
-          log_error("Failed to write to file");
+     if (write(this->file_fd, data.data(), data.size()) < 0)
           return this->send_error(TFTPErrorCode::AccessViolation,
                                   "Failed to write to file");
-     }
 
      this->last_data_cr = (!data.empty() && data.back() == '\r');
 
@@ -406,12 +392,10 @@ void TFTPServerConnection::handle_download() {
      if (sendto(this->conn_fd, payload.data(), payload.size(), 0,
                 reinterpret_cast<const sockaddr*>(&this->clt_addr),
                 sizeof(this->clt_addr))
-         < 0) {
-          log_error("Failed to send ACK for block " + this->get_block_n_hex());
+         < 0)
           return this->send_error(
               TFTPErrorCode::Unknown,
               "Failed to send ACK for block " + this->get_block_n_hex());
-     }
 
      /* Check if this was the last data block */
      if (packet.get_data().size() < TFTP_MAX_DATA) {
@@ -459,28 +443,22 @@ void TFTPServerConnection::handle_await_download() {
                return;
           }
 
-          log_error("Failed to receive data: " + std::string(strerror(errno)));
+          log_error("Failed to receive data:");
           send_error(TFTPErrorCode::Unknown, std::string(strerror(errno)));
           return;
      }
 
      /* Parse incoming packet */
      auto packet_ptr = PacketFactory::create(this->rx_buffer, this->rx_len);
-     if (!packet_ptr) {
-          log_error("Received an unparsable packet");
-          send_error(TFTPErrorCode::IllegalOperation,
-                     "Received an invalid packet");
-          return;
-     }
+     if (!packet_ptr)
+          return send_error(TFTPErrorCode::IllegalOperation,
+                            "Received an invalid packet");
 
      Logger::packet(*packet_ptr, this->clt_addr, this->conn_addr);
 
-     if (packet_ptr->get_opcode() != TFTPOpcode::DATA) {
-          log_error("Received a non-DATA packet");
-          send_error(TFTPErrorCode::IllegalOperation,
-                     "Received a non-DATA packet");
-          return;
-     }
+     if (packet_ptr->get_opcode() != TFTPOpcode::DATA)
+          return send_error(TFTPErrorCode::IllegalOperation,
+                            "Received a non-DATA packet");
 
      /* Increment block number */
      this->block_n++;
@@ -494,6 +472,8 @@ void TFTPServerConnection::handle_await_download() {
 
 void TFTPServerConnection::send_error(TFTPErrorCode code,
                                       const std::string& message) {
+     log_error(message);
+
      ErrorPacket res = ErrorPacket(code, message);
      auto payload = res.to_binary();
 

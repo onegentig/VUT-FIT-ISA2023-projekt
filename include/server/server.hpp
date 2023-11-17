@@ -14,9 +14,9 @@
 #     include <csignal>
 #     include <memory>
 
-#     include "Logger.hpp"
 #     include "common.hpp"
 #     include "server/connection.hpp"
+#     include "util/logger.hpp"
 
 /**
  * @brief Class for TFTP server.

@@ -17,8 +17,8 @@ TEST_CASE("Packet factory creation", "[packet_factory]") {
 
           std::vector<char> filename_vec(filename.begin(), filename.end());
           std::vector<char> mode_vec(mode.begin(), mode.end());
-          filename_vec = NetASCII::to_netascii(filename_vec);
-          mode_vec = NetASCII::to_netascii(mode_vec);
+          filename_vec = NetASCII::vec_to_na(filename_vec);
+          mode_vec = NetASCII::vec_to_na(mode_vec);
           filename_vec.push_back('\0');
           mode_vec.push_back('\0');
 
@@ -37,8 +37,8 @@ TEST_CASE("Packet factory creation", "[packet_factory]") {
 
           std::vector<char> filename_vec(filename.begin(), filename.end());
           std::vector<char> mode_vec(mode.begin(), mode.end());
-          filename_vec = NetASCII::to_netascii(filename_vec);
-          mode_vec = NetASCII::to_netascii(mode_vec);
+          filename_vec = NetASCII::vec_to_na(filename_vec);
+          mode_vec = NetASCII::vec_to_na(mode_vec);
           filename_vec.push_back('\0');
           mode_vec.push_back('\0');
 
@@ -75,7 +75,7 @@ TEST_CASE("Packet factory creation", "[packet_factory]") {
           std::vector<char> binary = {0x00, 0x05, 0x00, 0x01, 0x00, 0x00};
           std::string message = "Test message";
           std::vector<char> message_vec(message.begin(), message.end());
-          message_vec = NetASCII::to_netascii(message_vec);
+          message_vec = NetASCII::vec_to_na(message_vec);
           message_vec.push_back('\0');
           binary.insert(binary.end(), message_vec.begin(), message_vec.end());
 
