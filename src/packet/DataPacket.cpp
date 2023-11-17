@@ -72,7 +72,7 @@ std::vector<char> DataPacket::read_file_data() const {
 
           /* Convert to NetASCII */
           chunk.resize(bytes_rx);
-          chunk = NetASCII::to_netascii(chunk);
+          chunk = NetASCII::vec_to_na(chunk);
 
           /* Add to buffer */
           buffer.insert(buffer.end(), chunk.begin(), chunk.end());

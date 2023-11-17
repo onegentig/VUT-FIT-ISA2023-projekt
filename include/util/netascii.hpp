@@ -13,18 +13,21 @@
 
 /**
  * @brief NetASCII manipulation utility class
+ * @see https://datatracker.ietf.org/doc/html/rfc764
+ * @see https://www.reissenzahn.com/protocols/tftp#netascii
  */
 class NetASCII {
    public:
+     /* === Primary conversion methods === */
+
      /**
-      * @brief Convert plain binary data to NetASCII.
-      * Method replaces all occurences of `\n` with `\r\n` and `\r` with `\r\0`.
-      * @see https://datatracker.ietf.org/doc/html/rfc764
-      * @see https://www.reissenzahn.com/protocols/tftp#netascii
+      * @brief Converts a binary vector to NetASCII vector
+      * @details Method replaces all occurences of `\n` with `\r\n` and `\r`
+      * with `\r\0`.
       * @param std::vector<char> binary data
-      * @return std::vector<char> NetASCII data
+      * @return NetASCII binary vector
       */
-     static std::vector<char> to_netascii(const std::vector<char>& data) {
+     static std::vector<char> vec_to_na(const std::vector<char>& data) {
           std::vector<char> netasciiData;
           for (uint64_t i = 0; i < data.size(); i++) {
                if (data[i] == '\n') {
@@ -52,14 +55,13 @@ class NetASCII {
      }
 
      /**
-      * @brief Convert NetASCII data to plain binary.
-      * Method replaces all occurences of `\r\n` with `\n` and `\r\0` with `\r`.
-      * @see https://datatracker.ietf.org/doc/html/rfc764
-      * @see https://www.reissenzahn.com/protocols/tftp#netascii
-      * @param std::vector<char> NetASCII data
-      * @return std::vector<char> Native binary data
+      * @brief Convert NetASCII vector to a binary vector
+      * @details Method replaces all occurences of `\r\n` with `\n` and `\r\0`
+      * with `\r`.
+      * @param std::vector<char> NetASCII binary vector
+      * @return Unix binary vector
       */
-     static std::vector<char> from_netascii(const std::vector<char>& data) {
+     static std::vector<char> na_to_vec(const std::vector<char>& data) {
           std::vector<char> bin_data;
           for (uint64_t i = 0; i < data.size(); i++) {
                if (data[i] == '\r') {
@@ -82,6 +84,27 @@ class NetASCII {
           }
 
           return bin_data;
+     }
+
+     /* === Variants === */
+
+     /**
+      * @brief Converts std::string to a NetASCII vector
+      * @param std::string str String to convert
+      * @return NetASCII binary vector
+      */
+     static std::vector<char> str_to_na(const std::string& str) {
+          return vec_to_na(std::vector<char>(str.begin(), str.end()));
+     }
+
+     /**
+      * @brief Converts NetASCII vector to a std::string
+      * @param std::vector<char> NetASCII binary vector
+      * @return std::string
+      */
+     static std::string na_to_str(const std::vector<char>& data) {
+          std::vector<char> bin = na_to_vec(data);
+          return std::string(bin.begin(), bin.end());
      }
 };
 

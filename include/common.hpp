@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include "NetASCII.hpp"
 #include "const.hpp"
+#include "util/netascii.hpp"
 
 #endif

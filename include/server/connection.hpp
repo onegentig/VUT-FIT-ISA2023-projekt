@@ -13,9 +13,9 @@
 
 #     include <thread>
 
-#     include "Logger.hpp"
 #     include "common.hpp"
 #     include "packet/PacketFactory.hpp"
+#     include "util/logger.hpp"
 
 /**
  * @brief Enumeration for all possible states of a connection
