@@ -28,9 +28,9 @@ std::vector<char> RequestPacket::to_binary() const {
      if (filename.empty()) return std::vector<char>();
 
      std::string mode_str = this->get_mode_str();
-     std::vector<char> filename_bin = BasePacket::to_netascii(
+     std::vector<char> filename_bin = NetASCII::to_netascii(
          std::vector<char>(filename.begin(), filename.end()));
-     std::vector<char> mode_bin = BasePacket::to_netascii(
+     std::vector<char> mode_bin = NetASCII::to_netascii(
          std::vector<char>(mode_str.begin(), mode_str.end()));
 
      size_t length = 2 /* opcode */ + filename_bin.size() + mode_bin.size()
