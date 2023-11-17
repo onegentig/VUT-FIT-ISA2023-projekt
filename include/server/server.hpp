@@ -43,7 +43,7 @@ class TFTPServer {
       * @param int port
       * @return TFTPServer
       */
-     TFTPServer(std::string rootdir, int port);
+     explicit TFTPServer(std::string rootdir, int port);
 
      /**
       * @brief Deconstructs the TFTP server object.
@@ -52,17 +52,15 @@ class TFTPServer {
           if (this->fd > 0) this->stop();
      }
 
-     TFTPServer& operator=(TFTPServer&& other) = default;
-     TFTPServer& operator=(const TFTPServer&) = default;
-     TFTPServer(TFTPServer&& other) = default;
-     TFTPServer(const TFTPServer&) = default;
+     TFTPServer& operator=(TFTPServer&& other) = delete;
+     TFTPServer& operator=(const TFTPServer&) = delete;
+     TFTPServer(TFTPServer&& other) = delete;
+     TFTPServer(const TFTPServer&) = delete;
 
      /* === Core Methods === */
 
      /**
       * @brief Starts the TFTP server
-      * @return true when started successfully,
-      * @return false otherwise
       */
      void start();
 

@@ -112,8 +112,8 @@ class TFTPServerConnection {
       * @return false otherwise
       */
      bool is_running() const {
-          return this->state != ConnectionState::Completed
-                 && this->state != ConnectionState::Errored;
+          return this->state != TFTPConnectionState::Completed
+                 && this->state != TFTPConnectionState::Errored;
      }
 
      /**
@@ -122,8 +122,8 @@ class TFTPServerConnection {
       * @return false otherwise
       */
      bool is_transfering() const {
-          return this->state == ConnectionState::Uploading
-                 || this->state == ConnectionState::Downloading;
+          return this->state == TFTPConnectionState::Uploading
+                 || this->state == TFTPConnectionState::Downloading;
      }
 
      /**
@@ -139,6 +139,32 @@ class TFTPServerConnection {
       * @return false otherwise
       */
      bool is_download() const { return this->type == TFTPRequestType::Write; }
+
+     /**
+      * @brief Checks if the sockaddr_in matches the client address
+      * @param addr Address to check
+      * @return true if matches,
+      * @return false otherwise
+      */
+     bool is_client_addr(const sockaddr_in& addr) const {
+          return this->clt_addr.sin_family == addr.sin_family
+                 && this->clt_addr.sin_port == addr.sin_port
+                 && this->clt_addr.sin_addr.s_addr == addr.sin_addr.s_addr;
+     }
+
+     /**
+      * @brief Checks timeout of the connection
+      * @return true if timeout,
+      * @return false otherwise
+      */
+     bool is_timedout() {
+          /** @see https://en.cppreference.com/w/cpp/chrono#Example */
+          auto now = std::chrono::steady_clock::now();
+          auto diff = std::chrono::duration_cast<std::chrono::seconds>(
+                          now - this->last_packet_time)
+                          .count();
+          return diff > TFTP_PACKET_TIMEO;
+     }
 
      /* === Helper Methods === */
 
@@ -164,7 +190,13 @@ class TFTPServerConnection {
           Logger::conn_err(std::to_string(this->tid), msg);
      };
 
-   protected:
+     /**
+      * @brief Receives, logs and checks origin of a TFTP packet
+      * @return Unique pointer to received packet or nullopt
+      */
+     std::optional<std::unique_ptr<BasePacket>> recv_packet();
+
+   private:
      int tid = -1;                    /**< Transfer identifier */
      int srv_fd;                      /**< Server socket file descriptor */
      int conn_fd = -1;                /**< Connection socket file descriptor */
@@ -177,7 +209,8 @@ class TFTPServerConnection {
      std::string file_path;           /**< Path to the file */
      TFTPRequestType type;            /**< Request type (RRQ / WRQ) */
      TFTPDataFormat format;           /**< Transfer format */
-     ConnectionState state;           /**< State of the connection */
+     TFTPConnectionState state
+         = TFTPConnectionState::Idle; /**< State of the connection */
      std::atomic<bool>& shutd_flag;   /**< Flag to signal shutdown */
      bool last_data_cr = false;       /**< Flag if last DATA ended with CR */
      std::chrono::steady_clock::time_point
