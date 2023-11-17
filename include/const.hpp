@@ -95,4 +95,18 @@ enum TFTPDataFormat {
      NetASCII = 1, /**< NetASCII mode */
 };
 
+/**
+ * @brief Enumeration for all possible states of a connection
+ */
+enum class TFTPConnectionState {
+     Idle,        /**< Initial state */
+     Requested,   /**< Initial transitory state entered on WRQ/RRQ */
+     Uploading,   /**< TRANSFERING state on reading */
+     Downloading, /**< TRANSFERING state on writing */
+     Awaiting,    /**< Awaiting ACK */
+     Timedout,    /**< Lost packet state; attempts retransmit */
+     Errored,     /**< Mid-transfer error; terminal state */
+     Completed    /**< Transfer completed; terminal state */
+};
+
 #endif
