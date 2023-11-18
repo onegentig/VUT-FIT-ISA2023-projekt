@@ -143,6 +143,17 @@ class DataPacket : public BasePacket {
      void set_mode(TFTPDataFormat mode) { this->mode = mode; }
 
      /**
+      * @brief Sets the no_seek option that makes the vector not seek
+      *        to the beginning of the block, instead reading from the
+      *        beginning.
+      * @note Use when input vector is the entire block, ex. when
+      *       reading from a buffer.
+      * @param bool no_seek
+      * @return void
+      */
+     void set_no_seek(bool no_seek) { this->no_seek = no_seek; }
+
+     /**
       * @brief Returns the mode.
       * @return TFTPDataFormat - mode
       */
@@ -190,6 +201,7 @@ class DataPacket : public BasePacket {
      uint16_t block_n;                            /**< Block number */
      std::vector<char> data;                      /**< Binary data */
      TFTPDataFormat mode = TFTPDataFormat::Octet; /**< Transfer format mode */
+     bool no_seek = false; /**< Disables vector seeking to block */
 };
 
 #endif

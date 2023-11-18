@@ -88,8 +88,8 @@ std::vector<char> DataPacket::read_file_data() const {
 std::vector<char> DataPacket::read_data() const {
      /* Raw data – return cut block */
      if (!data.empty()) {
-          size_t start = (block_n - 1) * TFTP_MAX_DATA;
-          size_t end = block_n * TFTP_MAX_DATA;
+          size_t start = no_seek ? 0 : ((block_n - 1) * TFTP_MAX_DATA);
+          size_t end = (no_seek ? 1 : block_n) * TFTP_MAX_DATA;
           if (end > data.size()) end = data.size();
           return std::vector<char>(data.begin() + start, data.begin() + end);
      }
