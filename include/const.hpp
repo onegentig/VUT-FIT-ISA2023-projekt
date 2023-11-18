@@ -100,7 +100,7 @@ enum TFTPDataFormat {
  */
 enum class TFTPConnectionState {
      Idle,        /**< Initial state */
-     Requested,   /**< Initial transitory state entered on WRQ/RRQ */
+     Requesting,  /**< Sent/Received a request */
      Uploading,   /**< TRANSFERING state on reading */
      Downloading, /**< TRANSFERING state on writing */
      Awaiting,    /**< Awaiting ACK */
