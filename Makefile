@@ -110,7 +110,7 @@ test: $(TEST_TARGET)
 
 $(TEST_TARGET): $(CATCH2_SRC) $(CATCH2_OBJ) $(TEST_OBJS) $(CLASS_OBJS)
 	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) -Itest/Catch2 $(TEST_OBJS) \
-		$(CLASS_OBJS) $(CATCH2_OBJ) -o $(TEST_TARGET)
+		$(PACKET_OBJS) $(CATCH2_OBJ) -o $(TEST_TARGET)
 	@echo "  Tests compiled!"
 
 $(TEST_OBJS): $(OBJ_DIR)/test/%.o : $(TEST_DIR)/%.cpp
