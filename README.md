@@ -21,26 +21,32 @@ Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/st
 - [X] Vytvoriť `TFTPServerConnection` a TID záchyt packetov
 - [X] V `TFTPServerConnection` implementovať upload flow (`RRQ`)
 - [X] V `TFTPServerConnection` implementovať download flow (`WRQ`)
-- [ ] `TFTPServer` graceful shutdown
-- [ ] Vytvoriť `client/main.cpp`
-- [ ] Vytvoriť `TFTPClient`
-- [ ] V `TFTPClient` implementovať upload flow (`WRQ`)
-- [ ] V `TFTPClient` implementovať download flow (`RRQ`)
+- [X] `TFTPServer` graceful shutdown
+- [X] Vytvoriť `client/main.cpp`
+- [X] Vytvoriť `TFTPClient`
+- [X] V `TFTPClient` implementovať upload flow (`WRQ`)
+- [X] V `TFTPClient` implementovať download flow (`RRQ`)
 - [X] Vytvoriť `PacketLogger` podľa zadania, normalizovať všetky logy
 - [ ] Nahradiť multi-threading na niečo iné (select, poll, epoll, …)
 - [ ] …RFC rozšírenia…
 - [ ] ⏰ 2023-11-20 **Deadline**
+
+### Dodržané RFC ###
+
+- [X] [RFC 1350](https://datatracker.ietf.org/doc/html/rfc1350) — TFTP Protocol (Revision 2)
+- [ ] [RFC 2347](https://datatracker.ietf.org/doc/html/rfc2347) — TFTP Option Extension
+- [ ] [RFC 2348](https://datatracker.ietf.org/doc/html/rfc2348) — TFTP Blocksize Option
+- [ ] [RFC 2349](https://datatracker.ietf.org/doc/html/rfc2349) — TFTP Timeout Interval and Transfer Size Options
 
 ### Môže sa hodiť ###
 
 - [TFTP Protocol Standard](https://datatracker.ietf.org/doc/html/rfc1350)
 - [What is TFTP? on GeeksforGeeks](https://www.geeksforgeeks.org/what-is-tftp-trivial-file-transfer-protocol/)
 - [TFTP on Wikipedia](https://en.wikipedia.org/wiki/Trivial_File_Transfer_Protocol)
+- [Using Internet Sockets](https://beej.us/guide/bgnet/pdf/bgnet_a4_c_1.pdf)
+- [C++ Socket-Programming on GeeksforGeeks](https://www.geeksforgeeks.org/socket-programming-cc/)
 - [Hands-On Network Programming with C](https://ebookcentral.proquest.com/lib/vutbrno/reader.action?docID=5774233)
   - [Code Repository](https://github.com/codeplea/hands-on-network-programming-with-c)
-- [UNIX Network Programming](https://libgen.rs/book/index.php?md5=7455B393ADC934D8F0D5BA941CADC47D)
-- [Socket-Programming Fundamentals in C by Think and Learn](https://youtu.be/_lQ-3S4fJ0U?list=PLPyaR5G9aNDvs6TtdpLcVO43_jvxp4emI)
-- [C++ Socket-Programming on GeeksforGeeks](https://www.geeksforgeeks.org/socket-programming-cc/)
 
 ----------------------------------------------
 

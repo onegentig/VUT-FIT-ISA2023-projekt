@@ -23,6 +23,7 @@ OBJ_DIR                = obj
 INCLUDE_DIR            = include
 CLIENT_SRC             = $(SRC_DIR)/client
 SERVER_SRC             = $(SRC_DIR)/server
+UTIL_SRC               = $(SRC_DIR)/util
 PACKET_SRC             = $(SRC_DIR)/packet
 
 CPP                    = g++
@@ -46,10 +47,12 @@ RM                     = rm -f
 INCLUDES               := $(shell find include/ -type f -name '*.hpp')
 CLIENT_SRCS            := $(wildcard $(CLIENT_SRC)/*.cpp)
 SERVER_SRCS            := $(wildcard $(SERVER_SRC)/*.cpp)
+UTIL_SRCS              := $(wildcard $(UTIL_SRC)/*.cpp)
 PACKET_SRCS            := $(wildcard $(PACKET_SRC)/*.cpp)
 
 CLIENT_OBJS            := $(CLIENT_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 SERVER_OBJS            := $(SERVER_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+UTIL_OBJS              := $(UTIL_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 PACKET_OBJS            := $(PACKET_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 CATCH2_H_URL           := \
@@ -63,8 +66,9 @@ TEST_SRCS              := $(wildcard $(TEST_DIR)/*.cpp)
 TEST_OBJS              := $(TEST_SRCS:$(TEST_DIR)/%.cpp=$(OBJ_DIR)/test/%.o)
 
 SRCS                   := $(CLIENT_SRCS) $(SERVER_SRCS) $(PACKET_SRCS) \
-	$(TEST_SRCS)
-OBJS                   := $(CLIENT_OBJS) $(SERVER_OBJS) $(PACKET_OBJS)
+	$(UTIL_SRCS) $(TEST_SRCS)
+OBJS                   := $(CLIENT_OBJS) $(SERVER_OBJS) $(PACKET_OBJS) \
+	$(UTIL_OBJS)
 CLASS_OBJS             := $(filter-out %main.o, $(OBJS))
 
 ###############################################################################
@@ -87,13 +91,13 @@ server: $(SERVER_TARGET)
 client: EXTRA_CPPFLAGS += ${RELEASE_CPPFLAGS}
 client: $(CLIENT_TARGET)
 
-$(CLIENT_TARGET): $(CLIENT_OBJS) $(PACKET_OBJS)
-	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CLIENT_OBJS) $(PACKET_OBJS) -o $(CLIENT_TARGET)
+$(CLIENT_TARGET): $(CLIENT_OBJS) $(PACKET_OBJS) $(UTIL_OBJS)
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CLIENT_OBJS) $(PACKET_OBJS) $(UTIL_OBJS) -o $(CLIENT_TARGET)
 	@echo "  tftp-client compiled!"
 	@echo "  Run with: ./tftp-client <-h hostname> [-p port] [-f path] <-t path>"
 
-$(SERVER_TARGET): $(SERVER_OBJS) $(PACKET_OBJS)
-	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(SERVER_OBJS) $(PACKET_OBJS) -o $(SERVER_TARGET)
+$(SERVER_TARGET): $(SERVER_OBJS) $(PACKET_OBJS) $(UTIL_OBJS)
+	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(SERVER_OBJS) $(PACKET_OBJS) $(UTIL_OBJS) -o $(SERVER_TARGET)
 	@echo "  tftp-server compiled!"
 	@echo "  Run with: ./tftp-server [-p port] <path>"
 
