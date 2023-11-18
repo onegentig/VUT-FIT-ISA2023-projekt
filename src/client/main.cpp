@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
      /* Create client */
      try {
           TFTPClient client(hostname, port, destpath, filepath);
-          client.start();
+          client.run();
      } catch (const std::exception& e) {
           std::cerr << "!ERR! " << e.what() << std::endl;
      }

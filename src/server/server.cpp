@@ -178,8 +178,7 @@ void TFTPServer::conn_listen() {
 
           /* Instantiate connection instance */
           auto conn = std::make_shared<TFTPServerConnection>(
-              this->fd, c_addr, *req_packet_ptr, this->rootdir,
-              this->shutd_flag);
+              c_addr, *req_packet_ptr, this->rootdir, this->shutd_flag);
           this->connections.push_back(conn);
 
           /* Exec connection in a separate thread */
