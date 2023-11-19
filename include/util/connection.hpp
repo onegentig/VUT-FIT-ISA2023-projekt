@@ -154,6 +154,15 @@ class TFTPConnectionBase {
      virtual void handle_request_download() = 0;
 
      /**
+      * @brief Processes incoming options and sets internal variables
+      *        in accordance with them (at least those that are supported)
+      * @param opts vector of option pairs
+      * @return vector<pair<string, string>> vector of processed options
+      */
+     std::vector<std::pair<std::string, std::string>> proc_opts(
+         const std::vector<std::pair<std::string, std::string>>& opts);
+
+     /**
       * @brief Handles upload of a DATA packet
       */
      void handle_upload();
@@ -201,7 +210,7 @@ class TFTPConnectionBase {
 
      /**
       * @brief Change `state` to a new state, pushing the old
-      *        state to `pstate`.
+      *        state to `pstate`
       * @param new_state New state to set
       * @return TFTPConnectionState – Previous state
       */
@@ -215,6 +224,22 @@ class TFTPConnectionBase {
                this->exec_unblock = true;
 
           return this->pstate;
+     }
+
+     /**
+      * @brief Change both `state` and `pstate` to a new state
+      *        (used for initial state setting)
+      * @param new_state New state to set
+      */
+     void set_init_state(TFTPConnectionState new_state) {
+          this->state = new_state;
+          this->pstate = new_state;
+
+          /* Toggle `exec_unblock` if applicable */
+          if (this->exit_on_await && new_state == TFTPConnectionState::Awaiting)
+               this->exec_unblock = true;
+
+          return;
      }
 
      /**
@@ -290,6 +315,11 @@ class TFTPConnectionBase {
       */
      virtual std::vector<char> next_data() = 0;
 
+     /**
+      * @brief Handles OACK packet (for client use only)
+      */
+     virtual void handle_oack(const OptionAckPacket& oack) { (void)oack; };
+
      /* === Variables === */
 
      /* == File descriptors ==*/
@@ -306,6 +336,8 @@ class TFTPConnectionBase {
      bool cr_end = false;       /**< Flad if last DATA ended with CR */
      bool file_created = false; /**< Flag if the file `filename` was created */
      bool exec_unblock = false; /**< Flag to return from `exec()` */
+     bool oack_expect = false;  /**< Flag to allow OACK packet recv */
+     bool oack_init = false;    /**< Flag if OACK replaces first response */
 
      /* == Toggles == */
      bool exit_on_await = false; /**< Makes `exec()` exit on `Awaiting` */
@@ -336,6 +368,8 @@ class TFTPConnectionBase {
      std::string file_name; /**< Name of downloaded/uploaded file */
      std::chrono::steady_clock::time_point
          last_packet_time; /**< Time of last packet */
+     std::vector<std::pair<std::string, std::string>>
+         opts; /**< Vector of options */
 };
 
 #endif

@@ -84,8 +84,16 @@ TEST_CASE("Packet factory creation", "[packet_factory]") {
           REQUIRE(packet->to_binary() == binary);
      }
 
+     SECTION("Create OACK packet") {
+          std::vector<char> binary
+              = {0x00, 0x06, 0x75, 0x77, 0x75, 0x00, 0x78, 0x64, 0x00};
+          std::unique_ptr<BasePacket> packet = PacketFactory::create(binary);
+          REQUIRE(packet->get_opcode() == TFTPOpcode::OACK);
+          REQUIRE(packet->to_binary() == binary);
+     }
+
      SECTION("Create invalid packet") {
-          std::vector<char> binary = {0x00, 0x06, 0x00, 0x01, 0x00, 0x00};
+          std::vector<char> binary = {0x00, 0x07, 0x00, 0x01, 0x00, 0x00};
           std::unique_ptr<BasePacket> packet = PacketFactory::create(binary);
           REQUIRE(packet == nullptr);
      }

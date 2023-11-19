@@ -14,6 +14,7 @@
 #     include "packet/BasePacket.hpp"
 #     include "packet/DataPacket.hpp"
 #     include "packet/ErrorPacket.hpp"
+#     include "packet/OptionAckPacket.hpp"
 #     include "packet/RequestPacket.hpp"
 
 /**
@@ -51,6 +52,9 @@ class PacketFactory {
                case TFTPOpcode::ERROR:
                     return std::make_unique<ErrorPacket>(
                         ErrorPacket::from_binary(bin_data));
+               case TFTPOpcode::OACK:
+                    return std::make_unique<OptionAckPacket>(
+                        OptionAckPacket::from_binary(bin_data));
                default:
                     return nullptr;
           }

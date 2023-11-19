@@ -97,6 +97,9 @@ class Logger {
                case TFTPOpcode::ERROR:
                     msg = "ERROR ";
                     break;
+               case TFTPOpcode::OACK:
+                    msg = "OACK ";
+                    break;
                default:
                     return;
           }
@@ -119,6 +122,9 @@ class Logger {
                     auto rq_packet = dynamic_cast<const RequestPacket&>(packet);
                     msg += " \"" + rq_packet.get_filename() + "\"";
                     msg += " " + rq_packet.get_mode_str();
+                    if (rq_packet.get_options_count() == 0) break;
+                    for (size_t i = 0; i < rq_packet.get_options_count(); i++)
+                         msg += " " + rq_packet.get_option_str(i);
                     break;
                }
 
@@ -138,9 +144,16 @@ class Logger {
                case TFTPOpcode::ERROR: {
                     auto err_packet = dynamic_cast<const ErrorPacket&>(packet);
                     msg += " " + std::to_string(err_packet.get_errcode());
-                    if (err_packet.get_message().has_value()) {
+                    if (err_packet.get_message().has_value())
                          msg += " \"" + err_packet.get_message().value() + "\"";
-                    }
+                    break;
+               }
+
+               case TFTPOpcode::OACK: {
+                    auto oack_packet
+                        = dynamic_cast<const OptionAckPacket&>(packet);
+                    for (size_t i = 0; i < oack_packet.get_options_count(); i++)
+                         msg += " " + oack_packet.get_option_str(i);
                     break;
                }
 
