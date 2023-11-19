@@ -105,6 +105,7 @@ void TFTPConnectionBase::sock_init() {
      Logger::glob_info("socket bound to "
                        + std::string(inet_ntoa(this->con_addr.sin_addr)) + ":"
                        + std::to_string(ntohs(this->con_addr.sin_port)));
+     rx_buffer.resize(this->blksize + 4);
      this->set_state(TFTPConnectionState::Requesting);
 }
 
@@ -210,11 +211,20 @@ std::vector<std::pair<std::string, std::string>> TFTPConnectionBase::proc_opts(
           std::transform(opt_name.begin(), opt_name.end(), opt_name.begin(),
                          static_cast<int (*)(int)>(std::tolower));
 
-          /*if (opt_name == "blksize") {
+          if (opt_name == "blksize") {
+               /** @see https://datatracker.ietf.org/doc/html/rfc2348#page-2 */
+               int blksize = std::stoi(opt.second);
+               if (blksize < TFTP_MIN_BLKSIZE || blksize > TFTP_MAX_BLKSIZE) {
+                    Logger::glob_info("ignoring invalid blksize option");
+                    continue;
+               }
+
+               this->blksize = blksize;
+               this->rx_buffer.resize(blksize + 4);
                acc_opts.push_back(opt);
-          } else {*/
+          } else {
                Logger::glob_info("ignoring unknown option '" + opt_name + "'");
-          //}
+          }
      }
 
      return acc_opts;
@@ -256,7 +266,7 @@ void TFTPConnectionBase::handle_upload() {
      std::vector<char> payload = this->next_data();
 
      /* Remember if this packet will be the last */
-     this->is_last = (payload.size() < TFTP_MAX_DATA + 4);
+     this->is_last = (payload.size() < static_cast<size_t>(this->blksize + 4));
 
      log_info("Sending DATA block " + this->get_block_n_hex() + " ("
               + std::to_string(payload.size() - 4) + " bytes)");
@@ -460,7 +470,7 @@ void TFTPConnectionBase::handle_download() {
                                   "Failed to write to file");
 
      /* Clear buffer */
-     this->rx_buffer.fill(0);
+     std::fill(rx_buffer.begin(), rx_buffer.end(), 0);
      this->rx_len = 0;
 
      /* Send ACK */
@@ -471,7 +481,7 @@ void TFTPConnectionBase::handle_download() {
             sizeof(this->rem_addr));
 
      /* End transmission if this was the final block */
-     if (packet.get_data().size() < TFTP_MAX_DATA) {
+     if (packet.get_data().size() < this->blksize) {
           log_info("Download complete!");
           this->set_state(TFTPConnectionState::Completed);
           return;
@@ -598,7 +608,7 @@ std::optional<std::unique_ptr<BasePacket>> TFTPConnectionBase::recv_packet(
 
      /* Receive packet */
      this->rx_len = recvfrom(
-         this->conn_fd, this->rx_buffer.data(), TFTP_MAX_PACKET, 0,
+         this->conn_fd, this->rx_buffer.data(), this->rx_buffer.size(), 0,
          reinterpret_cast<struct sockaddr *>(&origin_addr), &origin_addr_len);
 
      /* Handle errors */
@@ -614,7 +624,8 @@ std::optional<std::unique_ptr<BasePacket>> TFTPConnectionBase::recv_packet(
      }
 
      /* Parse incoming packet */
-     auto packet_ptr = PacketFactory::create(this->rx_buffer, rx_len);
+     auto packet_ptr = PacketFactory::create(
+         std::vector<char>(rx_buffer.begin(), rx_buffer.begin() + rx_len));
      if (!packet_ptr) {
           send_error(TFTPErrorCode::IllegalOperation,
                      "Received an invalid packet");
@@ -644,7 +655,7 @@ std::optional<std::unique_ptr<BasePacket>> TFTPConnectionBase::recv_packet(
                  sizeof(origin_addr));
 
           /* Clear buffer */
-          this->rx_buffer.fill(0);
+          std::fill(rx_buffer.begin(), rx_buffer.end(), 0);
           this->rx_len = 0;
 
           /* …as if nothing happened */

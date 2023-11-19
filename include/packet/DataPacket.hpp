@@ -136,6 +136,13 @@ class DataPacket : public BasePacket {
      void set_block_number(uint16_t block_n) { this->block_n = block_n; }
 
      /**
+      * @brief Sets the block size.
+      * @param uint16_t block size
+      * @return void
+      */
+     void set_block_size(uint16_t block_size) { this->block_size = block_size; }
+
+     /**
       * @brief Sets the mode.
       * @param TFTPDataFormat mode
       * @return void
@@ -199,6 +206,7 @@ class DataPacket : public BasePacket {
    private:
      int fd = -1;                                 /**< File descriptor */
      uint16_t block_n;                            /**< Block number */
+     uint16_t block_size = TFTP_MAX_DATA;         /**< Block size */
      std::vector<char> data;                      /**< Binary data */
      TFTPDataFormat mode = TFTPDataFormat::Octet; /**< Transfer format mode */
      bool no_seek = false; /**< Disables vector seeking to block */
