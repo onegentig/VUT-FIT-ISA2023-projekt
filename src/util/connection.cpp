@@ -206,13 +206,11 @@ std::vector<std::pair<std::string, std::string>> TFTPConnectionBase::proc_opts(
 
      /* Iterate through options */
      for (const auto &opt : opts) {
-          /* DEBUG: Act as if 'blksize' is supported */
-          // TODO: Remove this after testing
-          if (opt.first == "blksize") {
+          /*if (opt.first == "blksize") {
                acc_opts.push_back(opt);
-          } else {
+          } else {*/
                Logger::glob_info("ignoring unknown option '" + opt.first + "'");
-          }
+          //}
      }
 
      return acc_opts;
