@@ -486,7 +486,7 @@ std::optional<std::unique_ptr<BasePacket>> TFTPConnectionBase::recv_packet(
           return std::nullopt;
      }
 
-     Logger::packet(*packet_ptr, origin_addr, this->rem_addr);
+     Logger::packet(*packet_ptr, origin_addr, this->con_addr);
 
      /* Overwrite host_addr if applicable,      */
      /* otherwise check TID/origin-client match */
