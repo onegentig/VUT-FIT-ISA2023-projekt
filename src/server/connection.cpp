@@ -13,7 +13,7 @@ TFTPServerConnection::TFTPServerConnection(
     const sockaddr_in& clt_addr, const RequestPacket& reqPacket,
     const std::string& rootDir,
     const std::shared_ptr<std::atomic<bool>>& shutd_flag)
-    : TFTPConnectionBase(), shutd_flag(*shutd_flag) {
+    : shutd_flag(*shutd_flag) {
      this->rem_addr = clt_addr;
 
      this->file_name = rootDir + "/" + reqPacket.get_filename();

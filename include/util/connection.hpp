@@ -41,6 +41,13 @@ class TFTPConnectionBase {
      /* === Public methods === */
 
      /**
+      * @brief Initialises the connection socket.
+      * @note This is made public for `poll`, when running `exec`
+      *       is not desirable.
+      */
+     void sock_init();
+
+     /**
       * @brief Starts the TFTP connection, creating a socket
       *        for this connection and starting the main loop.
       */
@@ -67,6 +74,19 @@ class TFTPConnectionBase {
       * @brief Unsets remote address static flag (rewrites on first packet)
       */
      void unset_addr_static() { this->addr_static = false; }
+
+     /**
+      * @brief Enables `exit_on_await`, which makes `exec()` handling
+      *        loop break on `Awaiting` state. This is useful for
+      *        more custom handling, ex. `poll()`.
+      */
+     void set_await_exit() { this->exit_on_await = true; }
+
+     /**
+      * @brief Unsets `exit_on_await`, making `exec()` handling loop
+      *        blocking on `Awaiting` state as is default.
+      */
+     void unset_await_exit() { this->exit_on_await = false; }
 
      /**
       * @brief Checks if the connection is running
@@ -104,6 +124,12 @@ class TFTPConnectionBase {
      virtual bool is_download() const {
           return this->get_type() == TFTPRequestType::Read;
      }
+
+     /**
+      * @brief Gets the connection socket file descriptor
+      * @return int Connection socket fd
+      */
+     int get_fd() const { return this->conn_fd; }
 
    protected:
      /* === Core private methods === */
@@ -180,8 +206,14 @@ class TFTPConnectionBase {
       * @return TFTPConnectionState – Previous state
       */
      TFTPConnectionState set_state(TFTPConnectionState new_state) {
+          /* Transition to new state */
           this->pstate = this->state;
           this->state = new_state;
+
+          /* Toggle `exec_unblock` if applicable */
+          if (this->exit_on_await && new_state == TFTPConnectionState::Awaiting)
+               this->exec_unblock = true;
+
           return this->pstate;
      }
 
@@ -273,8 +305,11 @@ class TFTPConnectionBase {
      bool is_last = false;      /**< Flag for last packet */
      bool cr_end = false;       /**< Flad if last DATA ended with CR */
      bool file_created = false; /**< Flag if the file `filename` was created */
-     bool addr_static
-         = false; /**< Flag if rem_addr should never be ovearwritten */
+     bool exec_unblock = false; /**< Flag to return from `exec()` */
+
+     /* == Toggles == */
+     bool exit_on_await = false; /**< Makes `exec()` exit on `Awaiting` */
+     bool addr_static = false;   /**< Stops rem_addr override on first packet */
 
      /* == State-tracking enums == */
      TFTPConnectionState state
@@ -298,7 +333,7 @@ class TFTPConnectionBase {
      ssize_t rx_len = 0; /**< Length of the incoming packet */
 
      /* == Other == */
-     std::string file_name = ""; /**< Name of downloaded/uploaded file */
+     std::string file_name; /**< Name of downloaded/uploaded file */
      std::chrono::steady_clock::time_point
          last_packet_time; /**< Time of last packet */
 };
