@@ -206,13 +206,14 @@ std::vector<std::pair<std::string, std::string>> TFTPConnectionBase::proc_opts(
 
      /* Iterate through options */
      for (const auto &opt : new_opts) {
-          std::transform(opt.first.begin(), opt.first.end(),
-                         opt.first.begin(), ::tolower);
+          std::string opt_name = opt.first;
+          std::transform(opt_name.begin(), opt_name.end(), opt_name.begin(),
+                         static_cast<int (*)(int)>(std::tolower));
 
-          /*if (opt.first == "blksize") {
+          /*if (opt_name == "blksize") {
                acc_opts.push_back(opt);
           } else {*/
-               Logger::glob_info("ignoring unknown option '" + opt.first + "'");
+               Logger::glob_info("ignoring unknown option '" + opt_name + "'");
           //}
      }
 
