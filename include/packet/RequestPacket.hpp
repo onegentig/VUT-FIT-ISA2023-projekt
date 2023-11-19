@@ -145,12 +145,13 @@ class RequestPacket : public BasePacket {
      }
 
      /**
-      * @brief Adds an option to the packet
+      * @brief Sets an option, adding a new one if it doesn't exist and
+      *        overwriting if it does
       * @param std::string name Option name
       * @param std::string value Option value
       */
-     void add_option(std::string name, std::string value) {
-          /* If option of this name exists, overwrite */
+     void set_option(std::string name, std::string value) {
+          /* Overwrite if exists */
           for (auto& opt : opts) {
                if (opt.first == name) {
                     opt.second = std::move(value);
@@ -163,12 +164,57 @@ class RequestPacket : public BasePacket {
      }
 
      /**
+      * @brief Adds a new option to the end of the packet
+      * @throws std::invalid_argument when option already exists
+      * @param std::string name Option name
+      * @param std::string value Option value
+      */
+     void add_option(std::string name, std::string value) {
+          /* Check if exists */
+          for (const auto& opt : opts)
+               if (opt.first == name)
+                    throw std::invalid_argument("Option already exists");
+
+          /* Add new option */
+          opts.emplace_back(std::move(name), std::move(value));
+     }
+
+     /**
       * @brief Returns the options
       * @return std::vector<std::pair<std::string, std::string>> - options
       */
      std::vector<std::pair<std::string, std::string>> get_options() const {
           return opts;
      }
+
+     /**
+      * @brief Gets option value by name
+      * @param std::string name Option name
+      * @return std::string Option value
+      */
+     std::string get_option_value(const std::string& name) const {
+          for (const auto& opt : opts)
+               if (opt.first == name) return opt.second;
+
+          return "";
+     }
+
+     /**
+      * @brief Gets an option string "name=value" at given index
+      * @param size_t index Index of the option
+      * @return std::string Option string
+      */
+     std::string get_option_str(size_t index) const {
+          if (index >= opts.size()) return "";
+
+          return opts[index].first + "=" + opts[index].second;
+     }
+
+     /**
+      * @brief Returns number of set options
+      * @return size_t - number of options
+      */
+     size_t get_options_count() const { return opts.size(); }
 
      /**
       * @brief Clears all options

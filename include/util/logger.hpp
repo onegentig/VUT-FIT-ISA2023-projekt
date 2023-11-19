@@ -119,6 +119,9 @@ class Logger {
                     auto rq_packet = dynamic_cast<const RequestPacket&>(packet);
                     msg += " \"" + rq_packet.get_filename() + "\"";
                     msg += " " + rq_packet.get_mode_str();
+                    if (rq_packet.get_options_count() == 0) break;
+                    for (size_t i = 0; i < rq_packet.get_options_count(); i++)
+                         msg += " " + rq_packet.get_option_str(i);
                     break;
                }
 

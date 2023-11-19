@@ -15,6 +15,7 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
           REQUIRE(rp.get_opcode() == TFTPOpcode::RRQ);
           REQUIRE(rp.get_filename() == "");
           REQUIRE(rp.get_mode() == TFTPDataFormat::Octet);
+          REQUIRE(rp.get_options_count() == 0);
      }
 
      SECTION("Parametrised constructor init") {
@@ -23,12 +24,14 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
           REQUIRE(rp_read.get_opcode() == TFTPOpcode::RRQ);
           REQUIRE(rp_read.get_filename() == "example.txt");
           REQUIRE(rp_read.get_mode() == TFTPDataFormat::Octet);
+          REQUIRE(rp_read.get_options_count() == 0);
 
           RequestPacket rp_write(TFTPRequestType::Write, "example.txt",
                                  TFTPDataFormat::Octet);
           REQUIRE(rp_write.get_opcode() == TFTPOpcode::WRQ);
           REQUIRE(rp_write.get_filename() == "example.txt");
           REQUIRE(rp_write.get_mode() == TFTPDataFormat::Octet);
+          REQUIRE(rp_write.get_options_count() == 0);
           REQUIRE(rp_read != rp_write);
 
           RequestPacket rp_incomplete(TFTPRequestType::Read, "example.txt",
@@ -36,6 +39,7 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
           REQUIRE(rp_incomplete.get_opcode() == TFTPOpcode::RRQ);
           REQUIRE(rp_incomplete.get_filename() == "example.txt");
           REQUIRE(rp_incomplete.get_mode() == TFTPDataFormat::NetASCII);
+          REQUIRE(rp_incomplete.get_options_count() == 0);
      }
 
      SECTION("Setters and getters") {
@@ -101,9 +105,13 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
 
           /* Set options */
           rp.add_option("blksize", "1432");
+          REQUIRE(rp.get_options_count() == 1);
           rp.add_option("timeout", "5");
+          REQUIRE(rp.get_options_count() == 2);
           rp.add_option("tsize", "123456789");
+          REQUIRE(rp.get_options_count() == 3);
           rp.add_option("hakuna", "matata");
+          REQUIRE(rp.get_options_count() == 4);
 
           // Packet -> Binary
           std::vector<char> binary = rp.to_binary();
@@ -152,6 +160,7 @@ TEST_CASE("Request Packet Functionality", "[packet_rrq]") {
           REQUIRE(rp2.get_filename() == filename);
           REQUIRE(rp2.get_mode() == TFTPDataFormat::NetASCII);
           REQUIRE(rp2.get_mode_str() == mode);
+          REQUIRE(rp2.get_options_count() == 4);
           REQUIRE(rp == rp2);
      }
 }
