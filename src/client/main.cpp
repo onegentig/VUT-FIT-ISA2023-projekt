@@ -84,7 +84,9 @@ int main(int argc, char* argv[]) {
      try {
           TFTPClient client(hostname, port, destpath, filepath);
           client.run();
+          return client.is_errored() ? EXIT_FAILURE : EXIT_SUCCESS;
      } catch (const std::exception& e) {
           std::cerr << "!ERR! " << e.what() << std::endl;
+          return EXIT_FAILURE;
      }
 }
