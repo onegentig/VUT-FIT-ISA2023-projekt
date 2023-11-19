@@ -50,6 +50,7 @@ class TFTPClient : public TFTPConnectionBase {
 
      void handle_request_upload() override;
      void handle_request_download() override;
+     void handle_oack(const OptionAckPacket& oack) override;
      bool should_shutd() override;
      std::vector<char> next_data() override;
 

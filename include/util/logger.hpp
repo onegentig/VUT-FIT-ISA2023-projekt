@@ -97,6 +97,9 @@ class Logger {
                case TFTPOpcode::ERROR:
                     msg = "ERROR ";
                     break;
+               case TFTPOpcode::OACK:
+                    msg = "OACK ";
+                    break;
                default:
                     return;
           }

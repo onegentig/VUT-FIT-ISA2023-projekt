@@ -188,6 +188,15 @@ class RequestPacket : public BasePacket {
      }
 
      /**
+      * @brief Sets the options vector
+      * @note This overwrites all existing options!
+      * @param vector<pair<string, string>> opts
+      */
+     void set_options(std::vector<std::pair<std::string, std::string>> opts) {
+          this->opts = std::move(opts);
+     }
+
+     /**
       * @brief Gets option value by name
       * @param std::string name Option name
       * @return std::string Option value

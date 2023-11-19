@@ -37,7 +37,7 @@ TFTPConnectionBase::~TFTPConnectionBase() {
      }
 
      /* Remove incomplete downloaded file */
-     if (this->is_download() && this->is_errored() && file_created) {
+     if (this->is_errored() && file_created) {
           if (access(this->file_name.c_str(), F_OK) != -1) {
                remove(this->file_name.c_str());
           }
@@ -156,7 +156,7 @@ void TFTPConnectionBase::exec() {
           /* Check shutdown flag */
           if (this->should_shutd()) {
                log_info("Shutdown flag detected, stopping...");
-               this->set_state(TFTPConnectionState::Errored);
+               this->send_error(TFTPErrorCode::Unknown, "Terminated by user");
                break;
           }
 
@@ -188,6 +188,36 @@ void TFTPConnectionBase::exec() {
      }
 }
 
+/**
+ * @details `proc_opts` (process options) is a method that adjusts internal
+ *          variables to suit given TFTP options, as defined by
+ *          TFC 2347. On the server side, this method is called when
+ *          RRQ/WRQ is received; on the client side when OACK is received
+ *          (when we can be sure server is OK with out options).
+ *          Method returns a vector of SUCCESSFULLY processed options
+ *          (so that server can send back an OACK right away).
+ * @note Currently the RFC 2347 is implemented, but no extending RFCs
+ *       that uitilise options are. This method is essentally a stub.
+ */
+std::vector<std::pair<std::string, std::string>> TFTPConnectionBase::proc_opts(
+    const std::vector<std::pair<std::string, std::string>> &opts) {
+     std::vector<std::pair<std::string, std::string>>
+         acc_opts; /**< Accepted opts */
+
+     /* Iterate through options */
+     for (const auto &opt : opts) {
+          /* DEBUG: Act as if 'blksize' is supported */
+          // TODO: Remove this after testing
+          if (opt.first == "blksize") {
+               acc_opts.push_back(opt);
+          } else {
+               Logger::glob_info("ignoring unknown option '" + opt.first + "'");
+          }
+     }
+
+     return acc_opts;
+}
+
 /* == Uploading handlers == */
 
 /**
@@ -198,6 +228,23 @@ void TFTPConnectionBase::exec() {
  *          flexibility.
  */
 void TFTPConnectionBase::handle_upload() {
+     /* OACK response */
+     if (this->block_n == 0 && this->oack_init) {
+          log_info("Sending OACK");
+
+          OptionAckPacket oack = OptionAckPacket(this->opts);
+          auto payload = oack.to_binary();
+
+          this->update_sent_time();
+          sendto(this->conn_fd, payload.data(), payload.size(), 0,
+                 reinterpret_cast<const sockaddr *>(&this->rem_addr),
+                 sizeof(this->rem_addr));
+
+          this->set_state(TFTPConnectionState::Awaiting);
+          return;
+     }
+
+     /* No OACK => no ACK 0 */
      if (this->block_n == 0) this->block_n = 1;
 
      /* Store sent time (for timeout checking) */
@@ -210,9 +257,10 @@ void TFTPConnectionBase::handle_upload() {
      this->is_last = (payload.size() < TFTP_MAX_DATA + 4);
 
      log_info("Sending DATA block " + this->get_block_n_hex() + " ("
-              + std::to_string(payload.size()) + " bytes)");
+              + std::to_string(payload.size() - 4) + " bytes)");
 
      /* Send data */
+     this->update_sent_time();
      sendto(this->conn_fd, payload.data(), payload.size(), 0,
             reinterpret_cast<const sockaddr *>(&this->rem_addr),
             sizeof(this->rem_addr));
@@ -229,6 +277,10 @@ void TFTPConnectionBase::handle_upload() {
  *          state on success (block_n++), previous state on
  *          timeo, loops on `WOULDBLOCK`, `Errored` on err
  *          and `Completed` on last ACK.
+ * @note After extending with RFC 2347, this handler also accepts
+ *       OACKs if `oack_expect` is set to true (flag reset on handle).
+ *       On OACK, it calls `handle_oack` "sub-handler". OACKs
+ *       recieved when `oack_expect` is false are ignored (strays).
  */
 void TFTPConnectionBase::handle_await_upload() {
      /* Timeout check */
@@ -248,31 +300,63 @@ void TFTPConnectionBase::handle_await_upload() {
      /* Receive packet */
      auto packet_res = this->recv_packet((this->block_n == 0));
      if (!packet_res.has_value()) return;  // No packet => loop in state
-
-     /* Cast packet to ACK (with validation ofc) */
      auto packet_ptr = std::move(packet_res.value());
-     if (packet_ptr->get_opcode() != TFTPOpcode::ACK)
-          return send_error(TFTPErrorCode::IllegalOperation,
-                            "Received a non-ACK packet");
 
-     auto *packet = dynamic_cast<AcknowledgementPacket *>(packet_ptr.get());
+     /* ERROR handling */
+     if (packet_ptr->get_opcode() == TFTPOpcode::ERROR) {
+          /* Cast */
+          auto *packet = dynamic_cast<ErrorPacket *>(packet_ptr.get());
+          auto errmsg = packet->get_message();
 
-     /* Check ACK block number */
-     if (packet->get_block_number() < this->block_n) {
-          /* Stray old block ACK */
-          log_info("Received ACK for block "
-                   + std::to_string(packet->get_block_number())
-                   + " (stray, ignoring)");
-          return;  // As if nothing happened => loop in state
+          /* Log */
+          log_error("Host errored with code "
+                    + std::to_string(packet->get_errcode()));
+          if (errmsg.has_value()) log_error("'" + errmsg.value() + "'");
+
+          /* Set state */
+          this->set_state(TFTPConnectionState::Errored);
+          return;
      }
 
-     if (packet->get_block_number() > this->block_n) {
-          /* Future block => error */
+     /* Check if packet type is as expected */
+     if (packet_ptr->get_opcode() != TFTPOpcode::ACK
+         && packet_ptr->get_opcode() != TFTPOpcode::OACK)
           return send_error(TFTPErrorCode::IllegalOperation,
-                            "Received ACK for future block");
+                            "Received a non-(O)ACK packet");
+
+     /* OACK handling */
+     if (packet_ptr->get_opcode() == TFTPOpcode::OACK) {
+          /* Ignore if `oack_expect` is unset */
+          if (!this->oack_expect)
+               return log_info(
+                   "Received OACK but oack_expect is not set, ignoring");
+          this->oack_expect = false;
+
+          /* Cast and handle options */
+          auto *packet = dynamic_cast<OptionAckPacket *>(packet_ptr.get());
+          this->handle_oack(*packet);
+     } else {
+          /* ACK handling */
+          auto *packet
+              = dynamic_cast<AcknowledgementPacket *>(packet_ptr.get());
+
+          /* Check ACK block number */
+          if (packet->get_block_number() < this->block_n) {
+               /* Stray old block ACK */
+               log_info("Received ACK for block "
+                        + std::to_string(packet->get_block_number())
+                        + " (stray, ignoring)");
+               return;  // As if nothing happened => loop in state
+          }
+
+          if (packet->get_block_number() > this->block_n) {
+               /* Future block => error */
+               return send_error(TFTPErrorCode::IllegalOperation,
+                                 "Received ACK for future block");
+          }
      }
 
-     // At this point, we know that the ACK is exactly the one we were awaiting
+     // (O)ACK handled, continue
      this->send_tries = 0;
 
      /* End transmission if this was the final block */
@@ -301,14 +385,31 @@ void TFTPConnectionBase::handle_await_upload() {
  *          for `[... CR ] | [ LF/NUL ...]` block split.
  */
 void TFTPConnectionBase::handle_download() {
+     /* OACK response */
+     if (this->block_n == 0 && this->oack_init) {
+          log_info("Sending OACK");
+
+          OptionAckPacket oack = OptionAckPacket(this->opts);
+          auto payload = oack.to_binary();
+
+          this->update_sent_time();
+          sendto(this->conn_fd, payload.data(), payload.size(), 0,
+                 reinterpret_cast<const sockaddr *>(&this->rem_addr),
+                 sizeof(this->rem_addr));
+
+          this->set_state(TFTPConnectionState::Awaiting);
+          return;
+     }
+
      AcknowledgementPacket ack = AcknowledgementPacket(this->block_n);
      auto payload = ack.to_binary();
      this->update_sent_time();
 
-     /* Empty buffer or 0 block_n => no writing, just send ACK (timeo) */
+     /* No data || block 0 => no writing, just send ACK (init or timeo) */
      if (this->block_n == 0 || this->rx_len <= 0) {
           log_info("Sending ACK for block " + this->get_block_n_hex());
 
+          this->update_sent_time();
           sendto(this->conn_fd, payload.data(), payload.size(), 0,
                  reinterpret_cast<const sockaddr *>(&this->rem_addr),
                  sizeof(this->rem_addr));
@@ -362,6 +463,7 @@ void TFTPConnectionBase::handle_download() {
 
      /* Send ACK */
      log_info("Sending ACK for block " + this->get_block_n_hex());
+     this->update_sent_time();
      sendto(this->conn_fd, payload.data(), payload.size(), 0,
             reinterpret_cast<const sockaddr *>(&this->rem_addr),
             sizeof(this->rem_addr));
@@ -402,37 +504,68 @@ void TFTPConnectionBase::handle_await_download() {
      /* Receive packet */
      auto packet_res = this->recv_packet((this->block_n == 0));
      if (!packet_res.has_value()) return;  // No packet => loop in state
-
-     /* Check if packet is DATA and block_n */
      auto packet_ptr = std::move(packet_res.value());
-     if (packet_ptr->get_opcode() != TFTPOpcode::DATA)
-          return send_error(TFTPErrorCode::IllegalOperation,
-                            "Received a non-DATA packet");
 
-     auto *packet = dynamic_cast<DataPacket *>(packet_ptr.get());
+     /* ERROR handling */
+     if (packet_ptr->get_opcode() == TFTPOpcode::ERROR) {
+          /* Cast */
+          auto *packet = dynamic_cast<ErrorPacket *>(packet_ptr.get());
+          auto errmsg = packet->get_message();
 
-     /* Check DATA block number */
-     if (packet->get_block_number() < this->block_n + 1) {
-          /* Stray old block ACK */
-          log_info("Received DATA for block "
-                   + std::to_string(packet->get_block_number())
-                   + " (stray, ignoring)");
-          return;  // As if nothing happened => loop in state
+          /* Log */
+          log_error("Host errored with code "
+                    + std::to_string(packet->get_errcode()));
+          if (errmsg.has_value()) log_error("'" + errmsg.value() + "'");
+
+          /* Set state */
+          this->set_state(TFTPConnectionState::Errored);
+          return;
      }
 
-     if (packet->get_block_number() > this->block_n + 1) {
-          /* Future block => error */
+     /* Check if packet type is as expected */
+     if (packet_ptr->get_opcode() != TFTPOpcode::DATA
+         && packet_ptr->get_opcode() != TFTPOpcode::OACK)
           return send_error(TFTPErrorCode::IllegalOperation,
-                            "Received ACK for future block");
+                            "Received a non-DATA/OACK packet");
+
+     /* OACK handling */
+     if (packet_ptr->get_opcode() == TFTPOpcode::OACK) {
+          /* Ignore if `oack_expect` is unset */
+          if (!this->oack_expect)
+               return log_info(
+                   "Received OACK but oack_expect is not set, ignoring");
+          this->oack_expect = false;
+
+          /* Cast and handle options */
+          auto *packet = dynamic_cast<OptionAckPacket *>(packet_ptr.get());
+          this->handle_oack(*packet);
+     } else {
+          /* DATA handling */
+          auto *packet = dynamic_cast<DataPacket *>(packet_ptr.get());
+
+          /* Check DATA block number */
+          if (packet->get_block_number() < this->block_n + 1) {
+               /* Stray old block ACK */
+               log_info("Received DATA for block "
+                        + std::to_string(packet->get_block_number())
+                        + " (stray, ignoring)");
+               return;  // As if nothing happened => loop in state
+          }
+
+          if (packet->get_block_number() > this->block_n + 1) {
+               /* Future block => error */
+               return send_error(TFTPErrorCode::IllegalOperation,
+                                 "Received ACK for future block");
+          }
+
+          /* Increment block number */
+          if (this->block_n++ == TFTP_MAX_FILE_BLOCKS - 1)
+               return send_error(TFTPErrorCode::Unknown,
+                                 "Block overflow (file too big)");
      }
 
-     // At this point, we know that the DATA is exactly the one we were awaiting
+     // DATA/OACK handled, continue
      this->send_tries = 0;
-
-     /* Increment block number */
-     if (this->block_n++ == TFTP_MAX_FILE_BLOCKS - 1)
-          return send_error(TFTPErrorCode::Unknown,
-                            "Block overflow (file too big)");
 
      /* Write to file in `Downloading` state */
      this->set_state(TFTPConnectionState::Downloading);
@@ -503,6 +636,7 @@ std::optional<std::unique_ptr<BasePacket>> TFTPConnectionBase::recv_packet(
                                         "Unexpected packet origin");
           auto err_payload = err.to_binary();
 
+          this->update_sent_time();
           sendto(this->conn_fd, err_payload.data(), err_payload.size(), 0,
                  reinterpret_cast<const sockaddr *>(&origin_addr),
                  sizeof(origin_addr));
@@ -531,6 +665,7 @@ void TFTPConnectionBase::send_error(TFTPErrorCode code,
      ErrorPacket res = ErrorPacket(code, message);
      auto payload = res.to_binary();
 
+     this->update_sent_time();
      sendto(this->conn_fd, payload.data(), payload.size(), 0,
             reinterpret_cast<const sockaddr *>(&this->rem_addr),
             sizeof(this->rem_addr));

@@ -30,9 +30,12 @@ void signal_handler(int signal) {
 TFTPClient::TFTPClient(const std::string &hostname, int port,
                        const std::string &destpath,
                        const std::optional<std::string> &filepath)
-    : TFTPConnectionBase(), hostname(hostname), port(port), destpath(destpath),
-      filepath(filepath) {
+    : hostname(hostname), port(port), destpath(destpath), filepath(filepath) {
      this->unset_addr_static();
+
+     /* Set some placeholder opts for testing */
+     // TODO: DO NOT FORGET TO REMOVE THIS AFTER TESTING!!!!
+     this->opts = {{"blksize", "1024"}, {"timeout", "1"}};
 
      /* Verify hostname */
      if (hostname.empty()) throw std::runtime_error("Invalid hostname");
@@ -108,6 +111,7 @@ void TFTPClient::handle_request_upload() {
      /* Create request payload */
      RequestPacket packet
          = RequestPacket(TFTPRequestType::Write, this->destpath, this->format);
+     packet.set_options(this->opts);
      auto payload = packet.to_binary();
 
      /* Send request */
@@ -116,7 +120,10 @@ void TFTPClient::handle_request_upload() {
             reinterpret_cast<const sockaddr *>(&this->rem_addr),
             sizeof(this->rem_addr));
 
-     /* Await ACK */
+     /* If options were set, allow OACK */
+     this->oack_expect = packet.get_options_count() > 0;
+
+     /* Await ACK or OACK */
      this->set_state(TFTPConnectionState::Awaiting);
 }
 
@@ -126,29 +133,55 @@ void TFTPClient::handle_request_upload() {
 void TFTPClient::handle_request_download() {
      log_info("Requesting read from file " + this->filepath.value());
 
-     /* Create a part file */
-     this->file_fd = open(this->destpath.c_str(), O_WRONLY | O_CREAT | O_TRUNC,
-                          S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+     /* Create a part file, if not created already */
+     if (!this->file_created) {
+          this->file_fd
+              = open(this->destpath.c_str(), O_WRONLY | O_CREAT | O_TRUNC,
+                     S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
-     /* Check if file was created properly */
-     if (this->file_fd < 0)
-          return send_error(TFTPErrorCode::AccessViolation,
-                            "Failed to create file");
-     this->file_created = true;
+          /* Check if file was created properly */
+          if (this->file_fd < 0)
+               return send_error(TFTPErrorCode::AccessViolation,
+                                 "Failed to create file");
+          this->file_created = true;
+     }
 
      /* Create request payload */
      RequestPacket packet = RequestPacket(TFTPRequestType::Read,
                                           this->filepath.value(), this->format);
+     packet.set_options(this->opts);
      auto payload = packet.to_binary();
 
      /* Send request */
-     this->last_packet_time = std::chrono::steady_clock::now();
+     this->update_sent_time();
      sendto(this->conn_fd, payload.data(), payload.size(), 0,
             reinterpret_cast<const sockaddr *>(&this->rem_addr),
             sizeof(this->rem_addr));
 
-     /* Await DATA */
+     /* If options were set, allow OACK */
+     this->oack_expect = packet.get_options_count() > 0;
+
+     /* Await DATA or OACK */
      this->set_state(TFTPConnectionState::Awaiting);
+}
+
+/**
+ * @details `handle_oack` is called when OACK packet is received and
+ *          `oack_expect` is set to true. It parses options from the
+ *          OACK and sets them to the connection.
+ */
+void TFTPClient::handle_oack(const OptionAckPacket &oack) {
+     auto new_opts = oack.get_options();
+
+     /* Process and set options */
+     auto acc_opts = this->proc_opts(new_opts);
+
+     // TODO: When should error 8 be sent?
+
+     this->log_info(
+         "Options accepted (count: " + std::to_string(acc_opts.size()) + ")");
+
+     return;
 }
 
 /**

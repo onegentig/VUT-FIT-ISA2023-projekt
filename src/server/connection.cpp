@@ -17,8 +17,9 @@ TFTPServerConnection::TFTPServerConnection(
      this->rem_addr = clt_addr;
 
      this->file_name = rootDir + "/" + reqPacket.get_filename();
-     type = reqPacket.get_type();
-     format = reqPacket.get_mode();
+     this->type = reqPacket.get_type();
+     this->format = reqPacket.get_mode();
+     this->opts = this->proc_opts(reqPacket.get_options());
 }
 
 /* === Virtuals === */
@@ -56,8 +57,6 @@ void TFTPServerConnection::handle_request_upload() {
           return this->send_error(errcode, errmsg);
      }
 
-     this->file_created = true;
-
      /* Check if file doesn’t exceed max allowed size */
      /** @see https://stackoverflow.com/a/6039648 */
      struct stat st;
@@ -67,10 +66,12 @@ void TFTPServerConnection::handle_request_upload() {
           return this->send_error(TFTPErrorCode::Unknown, "File too big");
      }
 
+     /* If any options were accepted, set `oack_init` */
+     this->oack_init = !this->opts.empty();
+
      /* Things are ready for transfer */
      log_info("File ready, starting upload");
-     this->state = TFTPConnectionState::Uploading;
-     this->set_state(TFTPConnectionState::Uploading);
+     this->set_init_state(TFTPConnectionState::Uploading);
 }
 
 /**
@@ -95,10 +96,12 @@ void TFTPServerConnection::handle_request_download() {
                                   "Could not create file");
      this->file_created = true;
 
+     /* If any options were accepted, set `oack_init` */
+     this->oack_init = !this->opts.empty();
+
      /* Things are ready for transfer */
      log_info("File ready, starting download");
-     this->state = TFTPConnectionState::Downloading;
-     this->set_state(TFTPConnectionState::Downloading);
+     this->set_init_state(TFTPConnectionState::Downloading);
 }
 
 /**
