@@ -200,12 +200,15 @@ void TFTPConnectionBase::exec() {
  *       that uitilise options are. This method is essentally a stub.
  */
 std::vector<std::pair<std::string, std::string>> TFTPConnectionBase::proc_opts(
-    const std::vector<std::pair<std::string, std::string>> &opts) {
+    const std::vector<std::pair<std::string, std::string>> &new_opts) {
      std::vector<std::pair<std::string, std::string>>
          acc_opts; /**< Accepted opts */
 
      /* Iterate through options */
-     for (const auto &opt : opts) {
+     for (const auto &opt : new_opts) {
+          std::transform(opt.first.begin(), opt.first.end(),
+                         opt.first.begin(), ::tolower);
+
           /*if (opt.first == "blksize") {
                acc_opts.push_back(opt);
           } else {*/
