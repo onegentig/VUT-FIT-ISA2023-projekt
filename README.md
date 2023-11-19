@@ -27,7 +27,7 @@ Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/st
 - [X] V `TFTPClient` implementovať upload flow (`WRQ`)
 - [X] V `TFTPClient` implementovať download flow (`RRQ`)
 - [X] Vytvoriť `PacketLogger` podľa zadania, normalizovať všetky logy
-- [ ] Nahradiť multi-threading na niečo iné (select, poll, epoll, …)
+- [X] Nahradiť multi-threading na niečo iné (select, poll, epoll, …)
 - [ ] …RFC rozšírenia…
 - [ ] ⏰ 2023-11-20 **Deadline**
 

@@ -33,6 +33,9 @@ class TFTPServerConnection : public TFTPConnectionBase {
      TFTPServerConnection(TFTPServerConnection&& other) = delete;
      TFTPServerConnection(const TFTPServerConnection&) = delete;
 
+     /** @note `exec()` is made public to allow for `poll()` handling */
+     using TFTPConnectionBase::exec;
+
    protected:
      /* === Overrides === */
 

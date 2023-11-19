@@ -49,22 +49,16 @@ TFTPConnectionBase::~TFTPConnectionBase() {
 }
 
 /**
- * @details The `run` method is the main method of the connection.
- *          It will create a socket and set up the connection
- *          (incl. TID, binding and whatnot), after which it will
- *          call the internal `exec()` method that handles state
- *          logic. As such, `run()` is a blocking method.
- * @throws std::runtime_error if the socket creation screws up
- * @see
- * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=16
+ * @details Simple socket initialising method.
  */
-void TFTPConnectionBase::run() {
-     Logger::glob_op("Starting connection...");
-
+void TFTPConnectionBase::sock_init() {
      /* Create socket */
      this->conn_fd = socket(AF_INET, SOCK_DGRAM, 0);
      if (this->conn_fd == -1)
           throw std::runtime_error("Failed to create socket");
+
+     Logger::glob_info("socket created with FD "
+                       + std::to_string(this->conn_fd));
 
      /* Set address */
      memset(&(this->con_addr), 0, this->con_addr_len);
@@ -111,11 +105,26 @@ void TFTPConnectionBase::run() {
      Logger::glob_info("socket bound to "
                        + std::string(inet_ntoa(this->con_addr.sin_addr)) + ":"
                        + std::to_string(ntohs(this->con_addr.sin_port)));
+     this->set_state(TFTPConnectionState::Requesting);
+}
+
+/**
+ * @details The `run` method is the main method of the connection.
+ *          It will create a socket and set up the connection
+ *          (incl. TID, binding and whatnot), after which it will
+ *          call the internal `exec()` method that handles state
+ *          logic. As such, `run()` is a blocking method.
+ * @throws std::runtime_error if the socket creation screws up
+ * @see
+ * https://moodle.vut.cz/pluginfile.php/550189/mod_folder/content/0/IPK2022-23L-03-PROGRAMOVANI.pdf#page=16
+ */
+void TFTPConnectionBase::run() {
+     Logger::glob_op("Starting connection...");
+
+     /* Init socket */
+     this->sock_init();
 
      /* Start connection */
-     Logger::glob_event("Setup [" + std::to_string(this->tid) + "]"
-                        + " complete, starting connection...");
-     this->set_state(TFTPConnectionState::Requesting);
      this->exec();  // ! Blocking until connection is done or errs
 }
 
@@ -130,9 +139,20 @@ void TFTPConnectionBase::run() {
  *       `should_shutd()` using which they can terminate the
  *       connection (server sets it to a shared pointer atomic flag
  *       using which the server can terminate all its connections).
+ * @note The `exec_unblock` flag was added later to allow `poll()`
+ *       server handling (it was originally multi-threaded). The flag
+ *       is set when conn transitions to the `Awaiting` state, which
+ *       meants it, well, is awaitng a packet – so the server can
+ *       `poll()` the connection and unblock it when a packet arrives.
  */
 void TFTPConnectionBase::exec() {
      while (this->is_running()) {
+          /* Check unblock flag */
+          if (this->exec_unblock) {
+               this->exec_unblock = false;
+               break;
+          }
+
           /* Check shutdown flag */
           if (this->should_shutd()) {
                log_info("Shutdown flag detected, stopping...");

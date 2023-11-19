@@ -9,6 +9,7 @@
 #ifndef TFTP_SERVER_HPP
 #     define TFTP_SERVER_HPP
 #     include <fcntl.h>
+#     include <poll.h>
 #     include <sys/stat.h>
 
 #     include <csignal>
@@ -70,20 +71,29 @@ class TFTPServer {
      void stop();
 
    private:
-     int fd;                            /**< Socket file descriptor */
-     int port;                          /**< Port to listen on */
-     std::string rootdir;               /**< Root directory of the server */
-     struct sockaddr_in addr {};        /**< Socket address */
-     socklen_t addr_len = sizeof(addr); /**< Socket address length */
-     std::vector<std::shared_ptr<TFTPServerConnection>>
-         connections; /**< Connection thread vector */
-     std::shared_ptr<std::atomic<bool>>
-         shutd_flag; /**< Flag to signal shutdown */
+     /* === Core methods === */
 
      /**
       * @brief Listens for incoming connections
       */
-     void conn_listen();
+     void srv_poll();
+
+     /**
+      * @brief Handles a new incoming connection
+      */
+     void new_conn();
+
+     /**
+      * @brief Removes a connection from `connections` and `fds`
+      */
+     void conn_remove(int fd);
+
+     /**
+      * @brief Cleanup all finished connections
+      */
+     void conn_cleanup();
+
+     /* === Helper methods === */
 
      /**
       * @brief Validates that the rootdir is a valid, readable and writable
@@ -92,6 +102,35 @@ class TFTPServer {
       * @return false otherwise
       */
      bool check_dir() const;
+
+     /**
+      * @brief Finds a TFTPServerConnection by its socket file descriptor
+      * @return shared_ptr<TFTPServerConnection>* when found,
+      * @return NULL otherwise
+      */
+     std::shared_ptr<TFTPServerConnection>* find_conn(int fd);
+
+     /* === Variables === */
+
+     /* == Server config and fd == */
+     int port;            /**< Port to listen on */
+     std::string rootdir; /**< Root directory of the server */
+
+     /* == Poll == */
+     std::vector<struct pollfd> fds; /**< Poll file descriptors */
+     struct pollfd srv_fd {};        /**< Server file descriptor */
+     int cleanup_cnt = 0;            /**< Cleanup counter */
+
+     /* == Server address and fd == */
+     int fd = -1;                       /**< Socket file descriptor */
+     struct sockaddr_in addr {};        /**< Socket address */
+     socklen_t addr_len = sizeof(addr); /**< Socket address length */
+
+     /* == Other == */
+     std::vector<std::shared_ptr<TFTPServerConnection>>
+         connections; /**< Connections vector */
+     std::shared_ptr<std::atomic<bool>>
+         shutd_flag; /**< Flag to signal shutdown */
 };
 
 #endif
