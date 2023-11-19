@@ -35,7 +35,7 @@ TFTPClient::TFTPClient(const std::string &hostname, int port,
 
      /* Set some placeholder opts for testing */
      // TODO: DO NOT FORGET TO REMOVE THIS AFTER TESTING!!!!
-     this->opts = {{"blksize", "1024"}, {"timeout", "1"}};
+     this->opts = {{"blksize", "65464"}, {"timeout", "1"}};
 
      /* Verify hostname */
      if (hostname.empty()) throw std::runtime_error("Invalid hostname");
@@ -85,9 +85,6 @@ TFTPClient::TFTPClient(const std::string &hostname, int port,
      if (ip_vld < 0)
           throw std::runtime_error("Failed to convert IP address: "
                                    + std::string(strerror(errno)));
-
-     /* Set input buffer size */
-     file_buffer.resize(TFTP_MAX_DATA);
 
      /* Set up signal handler */
      /** @see https://gist.github.com/aspyct/3462238 */
@@ -196,9 +193,11 @@ bool TFTPClient::should_shutd() { return quit.load(); }
  * @return std::vector<char> Serialised DataPacket payload
  */
 std::vector<char> TFTPClient::next_data() {
+     this->file_buffer.resize(this->blksize);
+
      /* Load chunk from stdin */
      std::fill(file_buffer.begin(), file_buffer.end(), 0);
-     std::cin.read(file_buffer.data(), TFTP_MAX_DATA);
+     std::cin.read(file_buffer.data(), file_buffer.size());
      this->file_rx_len = std::cin.gcount();
 
      /* Create data payload */
@@ -208,5 +207,6 @@ std::vector<char> TFTPClient::next_data() {
                       this->block_n);
      packet.set_no_seek(true);
      packet.set_mode(this->format);
+     packet.set_block_size(this->blksize);
      return packet.to_binary();
 }

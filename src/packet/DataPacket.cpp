@@ -41,27 +41,27 @@ std::vector<char> DataPacket::read_file_data() const {
 
      /* Seek to file start (NetASCII) or block start (octet) */
      off_t ofst_start
-         = mode == TFTPDataFormat::Octet ? (block_n - 1) * TFTP_MAX_DATA : 0;
+         = mode == TFTPDataFormat::Octet ? (block_n - 1) * this->block_size : 0;
      if (lseek(fd, ofst_start, SEEK_SET) == -1)
           throw std::runtime_error("Cannot seek to file start");
 
      /* Binary data can be directly cut and returned */
      if (mode == TFTPDataFormat::Octet) {
-          char data[TFTP_MAX_DATA];
-          ssize_t bytes_rx = read(fd, data, TFTP_MAX_DATA);
+          std::vector<char> data(this->block_size);
+          ssize_t bytes_rx = read(fd, data.data(), this->block_size);
           if (bytes_rx == -1)
                throw std::runtime_error("Could not read file (0 bytes read)");
 
-          return std::vector<char>(data, data + bytes_rx);
+          return std::vector<char>(data.begin(), data.begin() + bytes_rx);
      }
 
      /* NetASCII data must be properly encoded – for size adjustment, must be
       * converted from start */
      off_t bytes_all = 0;
-     off_t ofst_last = block_n * TFTP_MAX_DATA;
+     off_t ofst_last = block_n * this->block_size;
      std::vector<char> buffer;
      while (bytes_all < ofst_last) {
-          std::vector<char> chunk(TFTP_MAX_DATA);
+          std::vector<char> chunk(this->block_size);
           ssize_t bytes_rx = read(fd, chunk.data(), chunk.size());
 
           if (bytes_rx == -1) {
@@ -80,16 +80,16 @@ std::vector<char> DataPacket::read_file_data() const {
      }
 
      /* Cut the last MAX_DATA_SIZE */
-     auto it_start = buffer.begin() + ((block_n - 1) * TFTP_MAX_DATA);
-     auto it_end = std::min(it_start + TFTP_MAX_DATA, buffer.end());
+     auto it_start = buffer.begin() + ((block_n - 1) * this->block_size);
+     auto it_end = std::min(it_start + this->block_size, buffer.end());
      return std::vector<char>(it_start, it_end);
 }
 
 std::vector<char> DataPacket::read_data() const {
      /* Raw data – return cut block */
      if (!data.empty()) {
-          size_t start = no_seek ? 0 : ((block_n - 1) * TFTP_MAX_DATA);
-          size_t end = (no_seek ? 1 : block_n) * TFTP_MAX_DATA;
+          size_t start = no_seek ? 0 : ((block_n - 1) * this->block_size);
+          size_t end = (no_seek ? 1 : block_n) * this->block_size;
           if (end > data.size()) end = data.size();
           return std::vector<char>(data.begin() + start, data.begin() + end);
      }

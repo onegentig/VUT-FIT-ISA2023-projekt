@@ -61,7 +61,7 @@ void TFTPServerConnection::handle_request_upload() {
      /** @see https://stackoverflow.com/a/6039648 */
      struct stat st;
      if (fstat(this->file_fd, &st) != 0
-         || st.st_size > static_cast<off_t>(TFTP_MAX_DATA * TFTP_MAX_FILE_BLOCKS
+         || st.st_size > static_cast<off_t>(this->blksize * TFTP_MAX_FILE_BLOCKS
                                             - 1)) {
           return this->send_error(TFTPErrorCode::Unknown, "File too big");
      }
@@ -119,5 +119,6 @@ std::vector<char> TFTPServerConnection::next_data() {
      /* Create data payload from file */
      DataPacket packet = DataPacket(this->file_fd, this->block_n);
      packet.set_mode(this->format);
+     packet.set_block_size(this->blksize);
      return packet.to_binary();
 }

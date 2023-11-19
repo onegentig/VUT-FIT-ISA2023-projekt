@@ -15,27 +15,13 @@ Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/st
 
 - [X] ⏰ 2023-09-05 **Zadanie**
 - [X] ⏰ 2023-09-06 **Registrácia**
-- [X] Vytvoriť triedy pre packety
-- [X] Vytvoriť `server/main.cpp`
-- [X] Vytvoriť `TFTPServer` a záchyt packetov
-- [X] Vytvoriť `TFTPServerConnection` a TID záchyt packetov
-- [X] V `TFTPServerConnection` implementovať upload flow (`RRQ`)
-- [X] V `TFTPServerConnection` implementovať download flow (`WRQ`)
-- [X] `TFTPServer` graceful shutdown
-- [X] Vytvoriť `client/main.cpp`
-- [X] Vytvoriť `TFTPClient`
-- [X] V `TFTPClient` implementovať upload flow (`WRQ`)
-- [X] V `TFTPClient` implementovať download flow (`RRQ`)
-- [X] Vytvoriť `PacketLogger` podľa zadania, normalizovať všetky logy
-- [X] Nahradiť multi-threading na niečo iné (select, poll, epoll, …)
-- [ ] …RFC rozšírenia…
 - [ ] ⏰ 2023-11-20 **Deadline**
 
 ### Dodržané RFC ###
 
 - [X] [RFC 1350](https://datatracker.ietf.org/doc/html/rfc1350) — TFTP Protocol (Revision 2)
 - [X] [RFC 2347](https://datatracker.ietf.org/doc/html/rfc2347) — TFTP Option Extension
-- [ ] [RFC 2348](https://datatracker.ietf.org/doc/html/rfc2348) — TFTP Blocksize Option
+- [X] [RFC 2348](https://datatracker.ietf.org/doc/html/rfc2348) — TFTP Blocksize Option
 - [ ] [RFC 2349](https://datatracker.ietf.org/doc/html/rfc2349) — TFTP Timeout Interval and Transfer Size Options
 
 ### Môže sa hodiť ###

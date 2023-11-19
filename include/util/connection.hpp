@@ -331,6 +331,9 @@ class TFTPConnectionBase {
      int block_n = 0;    /**< Number of the currently transferred block */
      int send_tries = 0; /**< Number of packet retransmission attempts */
 
+     /* == Options == */
+     uint16_t blksize = TFTP_MAX_DATA; /**< Block size */
+
      /* == Flags == */
      bool is_last = false;      /**< Flag for last packet */
      bool cr_end = false;       /**< Flad if last DATA ended with CR */
@@ -360,9 +363,8 @@ class TFTPConnectionBase {
          = sizeof(rem_addr); /**< Length of the remote address */
 
      /* == Buffers == */
-     std::array<char, TFTP_MAX_PACKET> rx_buffer{
-         0};             /**< Buffer for incoming packets */
-     ssize_t rx_len = 0; /**< Length of the incoming packet */
+     std::vector<char> rx_buffer; /**< Buffer for incoming packets */
+     ssize_t rx_len = 0;          /**< Length of the incoming packet */
 
      /* == Other == */
      std::string file_name; /**< Name of downloaded/uploaded file */

@@ -49,6 +49,18 @@ static const int TFTP_MAX_RETRIES = 4;
  */
 static const int TFTP_THREAD_DELAY = 100;
 
+/**
+ * @brief Minimum value of `blksize` option
+ * @see https://datatracker.ietf.org/doc/html/rfc2348#page-2
+ */
+static const uint16_t TFTP_MIN_BLKSIZE = 8;
+
+/**
+ * @brief Maximum value of `blksize` option
+ * @see https://datatracker.ietf.org/doc/html/rfc2348#page-2
+ */
+static const uint16_t TFTP_MAX_BLKSIZE = 65464;
+
 /* === Enumerations === */
 
 /**
