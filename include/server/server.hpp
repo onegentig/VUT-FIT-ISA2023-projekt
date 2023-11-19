@@ -19,6 +19,8 @@
 #     include "server/connection.hpp"
 #     include "util/logger.hpp"
 
+#     define POLL_TIMEO 1000
+
 /**
  * @brief Class for TFTP server.
  */
@@ -119,7 +121,6 @@ class TFTPServer {
      /* == Poll == */
      std::vector<struct pollfd> fds; /**< Poll file descriptors */
      struct pollfd srv_fd {};        /**< Server file descriptor */
-     int cleanup_cnt = 0;            /**< Cleanup counter */
 
      /* == Server address and fd == */
      int fd = -1;                       /**< Socket file descriptor */

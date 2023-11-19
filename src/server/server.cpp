@@ -136,8 +136,11 @@ void TFTPServer::srv_poll() {
           /* Check for SIGINT */
           if (quit.load()) return this->stop();
 
+          /* Finished connections cleanup */
+          this->conn_cleanup(); /** @see TFTPServer::conn_cleanup */
+
           /* Poll */
-          int n_events = poll(fds.data(), fds.size(), -1);
+          int n_events = poll(fds.data(), fds.size(), POLL_TIMEO);
           if (n_events == 0) continue;  // Nothing new on the server front
 
           /* Check for errors */
@@ -170,12 +173,6 @@ void TFTPServer::srv_poll() {
                /* Clear events */
                fd.revents &= 0;
           }
-
-          /* Perform full cleanup */
-          if (++this->cleanup_cnt >= 100) {
-               this->conn_cleanup(); /** @see TFTPServer::conn_cleanup */
-               this->cleanup_cnt = 0;
-          }
      }
 }
 
@@ -187,6 +184,10 @@ void TFTPServer::stop() {
 
      /* Wait for all connections to close */
      while (!this->connections.empty()) {
+          /* `exec` connections to let them transition to `Errored` */
+          for (auto& conn : this->connections) conn->exec();
+
+          /* Cleanup */
           this->conn_cleanup(); /** @see TFTPServer::conn_cleanup */
           std::this_thread::sleep_for(
               std::chrono::milliseconds(TFTP_THREAD_DELAY));
@@ -226,8 +227,9 @@ void TFTPServer::new_conn() {
           return;
      }
 
-     Logger::glob_event("New connection [" + std::to_string(c_addr.sin_port)
-                        + "]");
+     Logger::glob_event("New connection from "
+                        + std::string(inet_ntoa(c_addr.sin_addr)) + ":"
+                        + std::to_string(ntohs(c_addr.sin_port)));
 
      /* Cast to RRQ/WRQ */
      RequestPacket* req_packet_ptr

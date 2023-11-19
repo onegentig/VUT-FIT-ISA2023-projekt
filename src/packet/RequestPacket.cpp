@@ -28,6 +28,8 @@ std::vector<char> RequestPacket::to_binary() const {
      if (filename.empty()) return std::vector<char>();
 
      std::string mode_str = this->get_mode_str();
+
+     /* Serialise strings */
      std::vector<char> filename_bin = NetASCII::str_to_na(filename);
      std::vector<char> mode_bin = NetASCII::str_to_na(mode_str);
 
@@ -46,12 +48,31 @@ std::vector<char> RequestPacket::to_binary() const {
      offset += filename.length() + 1;  // after filename + separator
      std::memcpy(bin_data.data() + offset, mode_bin.data(), mode_bin.size());
 
+     /* Serialise options one-by-one */
+     for (const auto& opt : opts) {
+          /* Name */
+          std::vector<char> opt_bin = NetASCII::str_to_na(opt.first);
+          bin_data.insert(bin_data.end(), opt_bin.begin(), opt_bin.end());
+          bin_data.push_back('\0');
+
+          /* Value */
+          opt_bin = NetASCII::str_to_na(opt.second);
+          bin_data.insert(bin_data.end(), opt_bin.begin(), opt_bin.end());
+          bin_data.push_back('\0');
+     }
+
+     /* Ensure that the length doesn’t exceed 512B */
+     if (bin_data.size() > 512)
+          throw std::invalid_argument("Packet size exceeds 512B");
+
      return bin_data;
 }
 
 RequestPacket RequestPacket::from_binary(const std::vector<char>& bin_data) {
      if (bin_data.size() < 4)  // Min. size is 4B (2B opcode + 2B separator)
           throw std::invalid_argument("Incorrect packet size");
+     if (bin_data.size() > 512)  // Max. size is 512B (as defined by RFC 2347)
+          throw std::invalid_argument("Packet too large");
 
      /* Obtain and validate opcode */
      uint16_t opcode;
@@ -81,8 +102,27 @@ RequestPacket RequestPacket::from_binary(const std::vector<char>& bin_data) {
           throw std::invalid_argument("Incorrect mode");
      }
 
-     return RequestPacket(opcode == static_cast<uint16_t>(TFTPOpcode::RRQ)
-                              ? TFTPRequestType::Read
-                              : TFTPRequestType::Write,
-                          filename, mode);
+     /* Create packet */
+     auto packet
+         = RequestPacket(opcode == static_cast<uint16_t>(TFTPOpcode::RRQ)
+                             ? TFTPRequestType::Read
+                             : TFTPRequestType::Write,
+                         filename, mode);
+
+     /* Parse options */
+     while (offset < bin_data.size()) {
+          std::string opt_name, opt_val;
+
+          offset = findcstr(bin_data, offset, opt_name);
+          if (offset >= bin_data.size())
+               throw std::invalid_argument("Incomplete option key");
+
+          offset = findcstr(bin_data, offset, opt_val);
+          if (offset > bin_data.size())
+               throw std::invalid_argument("Incomplete option value");
+
+          packet.add_option(opt_name, opt_val);
+     }
+
+     return packet;
 }

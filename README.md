@@ -34,7 +34,7 @@ Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/st
 ### Dodržané RFC ###
 
 - [X] [RFC 1350](https://datatracker.ietf.org/doc/html/rfc1350) — TFTP Protocol (Revision 2)
-- [ ] [RFC 2347](https://datatracker.ietf.org/doc/html/rfc2347) — TFTP Option Extension
+- [X] [RFC 2347](https://datatracker.ietf.org/doc/html/rfc2347) — TFTP Option Extension
 - [ ] [RFC 2348](https://datatracker.ietf.org/doc/html/rfc2348) — TFTP Blocksize Option
 - [ ] [RFC 2349](https://datatracker.ietf.org/doc/html/rfc2349) — TFTP Timeout Interval and Transfer Size Options
 
