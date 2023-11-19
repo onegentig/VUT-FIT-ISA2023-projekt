@@ -62,6 +62,7 @@ enum TFTPOpcode : uint16_t {
      DATA = 3,  /**< Data */
      ACK = 4,   /**< Acknowledgement */
      ERROR = 5, /**< Error */
+     OACK = 6,  /**< Option-Acknowledgement (ext. RFC 2347) */
 };
 
 /**
@@ -69,14 +70,15 @@ enum TFTPOpcode : uint16_t {
  * @see https://datatracker.ietf.org/doc/html/rfc1350#page-10
  */
 enum TFTPErrorCode : uint16_t {
-     Unknown = 0,           /**< Not defined, see error message (if any). */
-     FileNotFound = 1,      /**< File not found. */
-     AccessViolation = 2,   /**< Access violation. */
-     DiskFull = 3,          /**< Disk full or allocation exceeded. */
-     IllegalOperation = 4,  /**< Illegal TFTP operation. */
-     UnknownTID = 5,        /**< Unknown transfer ID. */
-     FileAlreadyExists = 6, /**< File already exists. */
-     NoSuchUser = 7,        /**< No such user. */
+     Unknown = 0,           /**< Not defined, see error message (if any) */
+     FileNotFound = 1,      /**< File not found */
+     AccessViolation = 2,   /**< Access violation */
+     DiskFull = 3,          /**< Disk full or allocation exceeded */
+     IllegalOperation = 4,  /**< Illegal TFTP operation */
+     UnknownTID = 5,        /**< Unknown transfer ID */
+     FileAlreadyExists = 6, /**< File already exists */
+     NoSuchUser = 7,        /**< No such user */
+     OptionNegotiation = 8, /**< Option negotiation error (ext. RFC 2347) */
 };
 
 /**
