@@ -33,10 +33,6 @@ TFTPClient::TFTPClient(const std::string &hostname, int port,
     : hostname(hostname), port(port), destpath(destpath), filepath(filepath) {
      this->unset_addr_static();
 
-     /* Set some placeholder opts for testing */
-     // TODO: DO NOT FORGET TO REMOVE THIS AFTER TESTING!!!!
-     this->opts = {{"blksize", "65464"}, {"timeout", "1"}};
-
      /* Verify hostname */
      if (hostname.empty()) throw std::runtime_error("Invalid hostname");
 
@@ -172,8 +168,6 @@ void TFTPClient::handle_oack(const OptionAckPacket &oack) {
 
      /* Process and set options */
      auto acc_opts = this->proc_opts(new_opts);
-
-     // TODO: When should error 8 be sent?
 
      this->log_info(
          "Options accepted (count: " + std::to_string(acc_opts.size()) + ")");

@@ -10,7 +10,7 @@
 /**
  * @brief SIGINT flag
  * @details Atomic flag indicating whether SIGINT was recieved,
- * used to gracefully terminate server's connections.
+ *          used to gracefully terminate server's connections.
  */
 std::atomic<bool> quit(false);
 
@@ -25,10 +25,10 @@ void signal_handler(int signal) {
 
 /* === Constructors === */
 
-TFTPServer::TFTPServer() : port(TFTP_PORT), rootdir("./") {}
+TFTPServer::TFTPServer() : port(TFTP_STD_PORT), rootdir("./") {}
 
 TFTPServer::TFTPServer(std::string rootdir)
-    : port(TFTP_PORT), rootdir(std::move(rootdir)) {
+    : port(TFTP_STD_PORT), rootdir(std::move(rootdir)) {
      /* Verify root directory */
      if (!this->check_dir()) throw std::runtime_error("Invalid root directory");
 }
@@ -209,7 +209,7 @@ void TFTPServer::new_conn() {
      /* Prepare addr and buffer */
      struct sockaddr_in c_addr;
      socklen_t c_addr_len = sizeof(c_addr);
-     std::array<char, TFTP_MAX_PACKET> buffer{};
+     std::array<char, TFTP_DFLT_MAXSIZE> buffer{};
 
      /* Receive packet */
      ssize_t bytes_rx = recvfrom(srv_fd.fd, buffer.data(), buffer.size(), 0,
@@ -223,7 +223,7 @@ void TFTPServer::new_conn() {
      Logger::packet(*packet_ptr, c_addr);
      if (packet_ptr->get_opcode() != TFTPOpcode::RRQ
          && packet_ptr->get_opcode() != TFTPOpcode::WRQ) {
-          // TODO: Am I supposed to handle this somehow?
+          // Am I supposed to handle this somehow?
           return;
      }
 

@@ -62,11 +62,14 @@ class PacketFactory {
 
      /**
       * @brief Create TFTP packet from a binary array.
+      * @note This is used only in new connections for RRQs and WRQs, so
+      *       `TFTP_DFLT_MAXSIZE` is fine. The connections with their
+      *       `blksize`s use vectors.
       * @param bin_data Binary data to be parsed.
       * @return std::unique_ptr<BasePacket> Pointer to created packet.
       */
      static std::unique_ptr<BasePacket> create(
-         std::array<char, TFTP_MAX_PACKET>& bin_data, size_t size) {
+         std::array<char, TFTP_DFLT_MAXSIZE>& bin_data, size_t size) {
           return create(
               std::vector<char>(bin_data.begin(), bin_data.begin() + size));
      }

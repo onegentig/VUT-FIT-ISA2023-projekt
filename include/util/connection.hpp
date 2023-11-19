@@ -332,7 +332,7 @@ class TFTPConnectionBase {
      int send_tries = 0; /**< Number of packet retransmission attempts */
 
      /* == Options == */
-     uint16_t blksize = TFTP_MAX_DATA; /**< Block size */
+     uint16_t blksize = TFTP_DFLT_BLKSIZE; /**< Block size */
 
      /* == Flags == */
      bool is_last = false;      /**< Flag for last packet */

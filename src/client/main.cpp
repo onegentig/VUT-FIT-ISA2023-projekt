@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
      /* Parse command line options */
      int opt;
-     int port = TFTP_PORT;
+     int port = TFTP_STD_PORT;
      std::string hostname;
      std::optional<std::string> filepath = std::nullopt;
      std::string destpath;

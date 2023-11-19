@@ -206,7 +206,7 @@ class DataPacket : public BasePacket {
    private:
      int fd = -1;                                 /**< File descriptor */
      uint16_t block_n;                            /**< Block number */
-     uint16_t block_size = TFTP_MAX_DATA;         /**< Block size */
+     uint16_t block_size = TFTP_DFLT_BLKSIZE;     /**< Block size */
      std::vector<char> data;                      /**< Binary data */
      TFTPDataFormat mode = TFTPDataFormat::Octet; /**< Transfer format mode */
      bool no_seek = false; /**< Disables vector seeking to block */

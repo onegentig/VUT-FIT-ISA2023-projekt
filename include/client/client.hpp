@@ -58,7 +58,7 @@ class TFTPClient : public TFTPConnectionBase {
 
      /* == Connection params == */
      std::string hostname;                /**< Hostname to connect to */
-     int port = TFTP_PORT;                /**< Port to connect to */
+     int port = TFTP_STD_PORT;            /**< Port to connect to */
      std::string destpath;                /**< Destination path */
      std::optional<std::string> filepath; /**< Filepath to download */
 

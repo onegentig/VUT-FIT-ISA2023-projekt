@@ -11,23 +11,23 @@
 /**
  * @brief Maximum size of a TFTP DATA block.
  */
-static const size_t TFTP_MAX_DATA = 512;
+static const size_t TFTP_DFLT_BLKSIZE = 512;
 
 /**
  * @brief Maximum size of a TFTP packet.
  */
-static const size_t TFTP_MAX_PACKET = TFTP_MAX_DATA + 4;
+static const size_t TFTP_DFLT_MAXSIZE = TFTP_DFLT_BLKSIZE + 4;
 
 /**
  * @brief Maximum number of blocks TFTP can transfer.
  */
-static const uint16_t TFTP_MAX_FILE_BLOCKS = 0xFFFF;
+static const uint16_t TFTP_MAX_FILE_BLOCKS = UINT16_MAX;
 
 /**
  * @brief Default TFTP port
  * @see https://datatracker.ietf.org/doc/html/rfc1350#section-4
  */
-static const uint16_t TFTP_PORT = 69;
+static const uint16_t TFTP_STD_PORT = 69;
 
 /**
  * @brief Timeout for the TFTP server in seconds.
@@ -118,7 +118,6 @@ enum class TFTPConnectionState {
      Uploading,   /**< TRANSFERING state on reading */
      Downloading, /**< TRANSFERING state on writing */
      Awaiting,    /**< Awaiting ACK */
-     Timedout,    /**< Lost packet state; attempts retransmit */
      Errored,     /**< Mid-transfer error; terminal state */
      Completed    /**< Transfer completed; terminal state */
 };
