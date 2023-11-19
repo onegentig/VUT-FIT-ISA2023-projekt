@@ -40,9 +40,8 @@ Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/st
 
 ### Môže sa hodiť ###
 
-- [TFTP Protocol Standard](https://datatracker.ietf.org/doc/html/rfc1350)
-- [What is TFTP? on GeeksforGeeks](https://www.geeksforgeeks.org/what-is-tftp-trivial-file-transfer-protocol/)
 - [TFTP on Wikipedia](https://en.wikipedia.org/wiki/Trivial_File_Transfer_Protocol)
+- [What is TFTP? on GeeksforGeeks](https://www.geeksforgeeks.org/what-is-tftp-trivial-file-transfer-protocol/)
 - [Using Internet Sockets](https://beej.us/guide/bgnet/pdf/bgnet_a4_c_1.pdf)
 - [C++ Socket-Programming on GeeksforGeeks](https://www.geeksforgeeks.org/socket-programming-cc/)
 - [Hands-On Network Programming with C](https://ebookcentral.proquest.com/lib/vutbrno/reader.action?docID=5774233)
