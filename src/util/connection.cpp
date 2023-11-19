@@ -495,10 +495,23 @@ std::optional<std::unique_ptr<BasePacket>> TFTPConnectionBase::recv_packet(
           this->rem_addr = origin_addr;
           this->rem_addr_len = origin_addr_len;
      } else if (!this->is_remote_addr(origin_addr)) {
+          /* Packet not from established remote host */
           log_info("Received packet from unexpected origin");
-          /* Packet from unexpected origin – ignore, clear buffer */
+
+          /* Send an ERROR packet to the host */
+          ErrorPacket err = ErrorPacket(TFTPErrorCode::UnknownTID,
+                                        "Unexpected packet origin");
+          auto err_payload = err.to_binary();
+
+          sendto(this->conn_fd, err_payload.data(), err_payload.size(), 0,
+                 reinterpret_cast<const sockaddr *>(&origin_addr),
+                 sizeof(origin_addr));
+
+          /* Clear buffer */
           this->rx_buffer.fill(0);
           this->rx_len = 0;
+
+          /* …as if nothing happened */
           return std::nullopt;
      }
 
