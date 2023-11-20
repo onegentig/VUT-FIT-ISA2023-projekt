@@ -94,7 +94,7 @@ client: $(CLIENT_TARGET)
 $(CLIENT_TARGET): $(CLIENT_OBJS) $(PACKET_OBJS) $(UTIL_OBJS)
 	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CLIENT_OBJS) $(PACKET_OBJS) $(UTIL_OBJS) -o $(CLIENT_TARGET)
 	@echo "  tftp-client compiled!"
-	@echo "  Run with: ./tftp-client <-h hostname> [-p port] [-f path] <-t path>"
+	@echo "  Run with: ./tftp-client <-h hostname> [-p port] [-f path] [-o opt val]... <-t path>"
 
 $(SERVER_TARGET): $(SERVER_OBJS) $(PACKET_OBJS) $(UTIL_OBJS)
 	$(CPP) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(SERVER_OBJS) $(PACKET_OBJS) $(UTIL_OBJS) -o $(SERVER_TARGET)

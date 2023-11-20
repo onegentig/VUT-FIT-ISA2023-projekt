@@ -28,9 +28,10 @@ class TFTPClient : public TFTPConnectionBase {
       * @param [uint16_t] port
       * @return TFTPClient
       */
-     TFTPClient(const std::string& hostname, int port,
-                const std::string& destpath,
-                const std::optional<std::string>& filepath);
+     TFTPClient(
+         const std::string& hostname, int port, const std::string& destpath,
+         const std::optional<std::string>& filepath,
+         const std::vector<std::pair<std::string, std::string>>& options);
 
      TFTPClient& operator=(TFTPClient&& other) = delete;
      TFTPClient& operator=(const TFTPClient&) = delete;

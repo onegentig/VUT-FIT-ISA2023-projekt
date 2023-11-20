@@ -27,11 +27,13 @@ void signal_handler(int signal) {
 
 /* === Setup methods === */
 
-TFTPClient::TFTPClient(const std::string &hostname, int port,
-                       const std::string &destpath,
-                       const std::optional<std::string> &filepath)
+TFTPClient::TFTPClient(
+    const std::string &hostname, int port, const std::string &destpath,
+    const std::optional<std::string> &filepath,
+    const std::vector<std::pair<std::string, std::string>> &options)
     : hostname(hostname), port(port), destpath(destpath), filepath(filepath) {
      this->unset_addr_static();
+     this->opts = options;
 
      /* Verify hostname */
      if (hostname.empty()) throw std::runtime_error("Invalid hostname");
