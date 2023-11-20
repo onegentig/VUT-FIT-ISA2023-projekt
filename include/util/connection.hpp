@@ -56,6 +56,12 @@ class TFTPConnectionBase {
      /* === Public getters, setters and checkers === */
 
      /**
+      * @brief Gets the connection TID
+      * @return int TID
+      */
+     int get_tid() const { return this->tid; }
+
+     /**
       * @brief Gets the block number as a hexadecimal string
       * @return std::string hex block_n
       */
@@ -126,10 +132,27 @@ class TFTPConnectionBase {
      }
 
      /**
+      * @brief Checks if the connection is in awaiting state
+      * @return true if awaiting,
+      * @return false otherwise
+      */
+     bool is_awaiting() const {
+          return this->state == TFTPConnectionState::Awaiting;
+     }
+
+     /**
       * @brief Gets the connection socket file descriptor
       * @return int Connection socket fd
       */
      int get_fd() const { return this->conn_fd; }
+
+     /**
+      * @brief Gets timestamp of last packet transmission
+      * @return std::chrono::steady_clock::time_point
+      */
+     std::chrono::steady_clock::time_point get_last_send_time() const {
+          return this->last_packet_time;
+     }
 
    protected:
      /* === Core private methods === */

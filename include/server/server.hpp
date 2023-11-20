@@ -20,6 +20,8 @@
 #     include "util/logger.hpp"
 
 #     define POLL_TIMEO 1000
+#     define CONN_TIMEOUT (TFTP_PACKET_TIMEO * 3) * 1000
+#     define CONN_CLEANUP_INTERVAL 10000
 
 /**
  * @brief Class for TFTP server.
@@ -95,6 +97,16 @@ class TFTPServer {
       */
      void conn_cleanup();
 
+     /**
+      * @brief Checks if connections should be cleaned up
+      * @returns true when cleanup is needed,
+      * @returns false otherwise
+      */
+     bool should_cleanup() const {
+          return std::chrono::steady_clock::now() - this->last_cleanup
+                 > std::chrono::milliseconds(CONN_CLEANUP_INTERVAL);
+     }
+
      /* === Helper methods === */
 
      /**
@@ -132,6 +144,8 @@ class TFTPServer {
          connections; /**< Connections vector */
      std::shared_ptr<std::atomic<bool>>
          shutd_flag; /**< Flag to signal shutdown */
+     std::chrono::time_point<std::chrono::steady_clock>
+         last_cleanup; /**< Last cleanup time */
 };
 
 #endif

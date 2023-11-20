@@ -259,9 +259,6 @@ void TFTPConnectionBase::handle_upload() {
      /* No OACK => no ACK 0 */
      if (this->block_n == 0) this->block_n = 1;
 
-     /* Store sent time (for timeout checking) */
-     this->update_sent_time();
-
      /* Get data to send */
      std::vector<char> payload = this->next_data();
 
@@ -415,7 +412,6 @@ void TFTPConnectionBase::handle_download() {
 
      AcknowledgementPacket ack = AcknowledgementPacket(this->block_n);
      auto payload = ack.to_binary();
-     this->update_sent_time();
 
      /* No data || block 0 => no writing, just send ACK (init or timeo) */
      if (this->block_n == 0 || this->rx_len <= 0) {

@@ -61,8 +61,9 @@ void TFTPServerConnection::handle_request_upload() {
      /** @see https://stackoverflow.com/a/6039648 */
      struct stat st;
      if (fstat(this->file_fd, &st) != 0
-         || st.st_size > static_cast<off_t>(this->blksize * TFTP_MAX_FILE_BLOCKS
-                                            - 1)) {
+         || static_cast<uint32_t>(st.st_size)
+                > static_cast<uint32_t>(this->blksize) * TFTP_MAX_FILE_BLOCKS
+                      - 1) {
           return this->send_error(TFTPErrorCode::Unknown, "File too big");
      }
 

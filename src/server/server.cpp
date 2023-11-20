@@ -137,7 +137,8 @@ void TFTPServer::srv_poll() {
           if (quit.load()) return this->stop();
 
           /* Finished connections cleanup */
-          this->conn_cleanup(); /** @see TFTPServer::conn_cleanup */
+          if (this->should_cleanup())
+               this->conn_cleanup(); /** @see TFTPServer::conn_cleanup */
 
           /* Poll */
           int n_events = poll(fds.data(), fds.size(), POLL_TIMEO);
@@ -292,6 +293,20 @@ void TFTPServer::conn_remove(int fd) {
  */
 void TFTPServer::conn_cleanup() {
      for (size_t idx = 0; idx < this->connections.size(); idx++) {
+          /* "Stuck in await" timeout */
+          auto now = std::chrono::steady_clock::now();
+          auto diff = now - this->connections[idx]->get_last_send_time();
+          if (this->connections[idx]->is_awaiting()
+              && std::chrono::duration_cast<std::chrono::milliseconds>(diff)
+                         .count()
+                     > CONN_TIMEOUT) {
+               Logger::conn_err(
+                   std::to_string(this->connections[idx]->get_tid()),
+                   "Connection await timeout");
+               this->conn_remove(this->connections[idx]->get_fd());
+          }
+
+          /* Finished cleanup */
           if (this->connections[idx]->is_running()) continue;
           this->conn_remove(this->connections[idx]->get_fd());
      }
