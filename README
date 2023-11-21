@@ -1,0 +1,247 @@
+                          tftp-client & tftp-server                          
+                          =========================                          
+                                                                             
+                         Onegen Something (xkrame00)                          
+                 Vysoké učení technické v Brně, 20. Nov 2023                 
+
+README
+======
+
+  tftp-client & tftp-server je implementácia TFTP (Trivial File Transfer
+  Protocol) podľa štandardu RFC 1350 [1] a RFC 1123 [2], napísaná v jazyku
+  C++, s pridanou podporou pre TFTP Options Extension (RFC 2347) [3]
+  a TFTP Blocksize Option (RFC 2348) [4].
+
+  TFTP je jednoduchý lock-step protokol pre prenos súborov medzi dvoma
+  uzlami, definovaný nad UDP [1], často používaný pre prenos konfiguračných
+  súborov alebo booting obrazov v priestorovo obmedzených zariadeniach.
+  Protokol ako taký nie je však vhodný na prenos mimo lokálnu sieť kvôli
+  absencií zabezpečenia, autentifikácie alebo kontroly integrity.
+
+SERVER
+------
+
+  tftp-server je jednoduchý server príjmajúci požiadavky od klientov na
+  prenos (upload aj download) súborov. Prenos je podporovaný v binárnom
+  (octet) aj textovom (netascii) formáte. Na správu viacerých pripojení
+  je používané systémové volanie `poll()`.
+
+  Server podporuje 'blksize' option podľa RFC 2348 [4], umožnujúci nastaviť
+  veľkosť dátového bloku. Pri maximálnom blksize 65464 je maximálna
+  veľkosť prenositeľného súboru okolo 4,29 GB (SI). Implicitný blksize
+  512 umožnuje prenos do cca. 33,55 MB (SI). Pri zachytení SIGINT
+  (CTRL + C), server ukončí všetky spojenia a uzavrie socket.
+  
+  Server je možné spustiť s nasledujúcimi parametrami:
+
+    tftp-server [-p PORT] ROOT
+
+  Parametre:
+
+    -p PORT  Port, na ktorom bude server očakávať požiadavky
+             (predvolená hodnota je 69)
+    ROOT     Cesta ku koreňovému priečinku, z ktorého bude server
+             poskytovať (alebo sťahovať) súbory
+
+KLIENT
+------
+
+  tftp-client je jednoduchý klient na nahrávanie súborov na server zo
+  štandardného vstupu, alebo na sťahovanie súborov zo servera do daného
+  lokálneho súboru. Možnosti prenosu sa nastavujú argumentami príkazového
+  riadku. Obdobne ako server, klient podporuje 'blksize'. Pri zachytení
+  SIGINT (CTRL + C), klient ukončí svoje spojenie, v prípade sťahovania
+  odstráni čiastočný súbor, a uzavrie socket.
+
+  Klient je možné spustiť s nasledujúcimi parametrami:
+
+    tftp-client <-h HOST> [-p PORT] [-f FILE] [-o NAME VALUE]... <-t FILE>
+  
+  Parametre:
+
+    -h HOST        Adresa (IPv4) alebo doménové meno servera
+    -p PORT        Port, na ktorom server očakáva požiadavky
+                   (predvolená hodnota je 69)
+    -f FILE        Súbor, ktorý bude klient nahrávať na server
+    -o NAME VALUE  Pridanie TFTP options do požiadavku
+    -t DIST_FILE   Súbor, do ktorého bude klient sťahovať zo servera
+
+  Pokiaľ je zadaný parameter -f FILE, klient zo servera sťahuje súbor
+  menom DIST_FILE, lokálne bude uložený ako FILE. Pokiaľ nie je
+  zadaný, klient na server nahráva zo štandardného vstupu, pričom sa
+  nový vzdialený súbor bude volať DIST_FILE.
+
+BUILD
+-----
+
+  tftp-server aj tftp-client sú kompilované pomocou `g++` kompilátora,
+  projekt používa C++20 štandard. Pre building sa používa `make` nástroj.
+
+    $ make
+  
+  Všetky `make` ciele:
+
+    all       skompiluje optimalizovaný tftp-server a tftp-client
+    debug     skompiluje debugovateľný tftp-server a tftp-client
+    clean     odstráni všetky súbory vytvorené `make`-om
+    format    naformátuje zdrojové súbory pomocou clang-format
+    lint      spustí clang-tidy
+    tar       zbalí projekt do tar archívu `xkrame00.tar`
+    help      zobrazí zoznam možných `make` cieľov
+    test      spustí unit testy (Catch2 nie je súčasť projektu;
+                pokiaľ nie je Catch2 nájdený, stiahne sa do tests/Catch2)
+
+PRÍKLAD
+-------
+
+  Príklad použitia a výstupu – stiahnutie súboru 'example.txt'
+  zo servera z pohľadu obidvoch strán:
+
+  Spustenie servera obsahujúci žiadaný súbor:
+
+    $ ./tftp-server srv
+
+  Výstup servera (štandardný výstup):
+
+    :: Starting server...
+      socket created with FD 3
+      socket bound to 0.0.0.0:69
+    :: Listening for connections...
+
+  Spustenie klienta na požiadanie o súbor 'example.txt':
+
+    $ ./tftp-client -h 127.0.0.1 -t example.txt -f clt/example.txt
+  
+  Výstup klienta (štandardný výstup):
+
+    :: Starting connection...
+      socket created with FD 3
+      socket bound to 0.0.0.0:49512
+      [49512] – INFO  – Requesting read from file example.txt
+      [49512] – INFO  – Received block 1 (512 bytes)
+      [49512] – INFO  – Sending ACK for block 1
+      [49512] – INFO  – Received block 2 (3 bytes)
+      [49512] – INFO  – Sending ACK for block 2
+      [49512] – INFO  – Download complete!
+    ==> Closed connection [49512]
+
+  Pridaný výstup servera (štandardný výstup):
+
+    ==> New connection from 127.0.0.1:49512
+      socket created with FD 4
+      socket bound to 0.0.0.0:36701
+      [36701] – INFO  – Requesting read from file example.txt
+      [36701] – INFO  – File ready, starting upload
+      [36701] - INFO  - Sending DATA block 1 (512 bytes)
+      [36701] - INFO  - Awaiting ACK for block 1
+      [36701] - INFO  - Sending DATA block 2 (3 bytes)
+      [36701] - INFO  - Awaiting ACK for block 2
+      [36701] - INFO  - Upload complete!
+    ==> Closed connection [36701]
+
+  Na štandardnom chybovom výstupe sú vypisované príchozie packety.
+
+  Výstup servera (chybový výstup):
+
+    RRQ 127.0.0.1:49512 "example.txt" octet
+    ACK 127.0.0.1:49512 1
+    ACK 127.0.0.1:49512 2
+
+  Výstup klienta (chybový výstup):
+
+    DATA 127.0.0.1:36701:49512 1
+    DATA 127.0.0.1:36701:49512 2
+
+  Súbor 'example.txt' bol v tomto bode úspešne stiahnutý zo servera.
+
+  Pokiaľ by klient súbor 'example.txt' nesťahoval ale naopak nahrával,
+  príkaz jeho spustenia by bol:
+
+    $ ./tftp-client -h 127.0.0.1 -t example.txt < clt/example.txt
+
+LIMITÁCIE
+---------
+
+  - Server nepodporuje TFTP options mimo 'blksize'. Ostatné options
+    nie sú implementované a budú serverom ignorované (čo bude
+    klientovi oznámené ich absenciou v OACK).
+  - Klient nemá možnosť komunikovať v textovom (netascii) móde, vždy
+    je použitý binárny (octet) mód.
+  - Klient neoveruje akceptovateľnosť TFTP options získaných od servera
+    v OACK packete – napr. pokiaľ klient požiada o blksize 1024 ale
+    server v OACK pošle blksize 2048, klient príjme tento blksize,
+    pričom podľa RFC 2348 by malo dôjsť k ukončeniu spojenia s
+    chybovým kódom 8 (OptionNegotiation) [4]. Limit na blksize 8–65464
+    je však dodržaný na obidvoch stranách.
+  - Pri veˇľkom počte klientov (v rade stoviek až tisícov) môže server
+    značne zaťažiť CPU kvôli spracovávaniou cez `poll()`. Výkon servera
+    je však dostatočný na prenos súborov v rámci lokálnej siete.
+
+ŠTRUKTÚRA PROJEKTU
+------------------
+
+  .
+  ├─ include 
+  │  ├─ client
+  │  │  └─ client.hpp                 (deklarácia objektu klienta)
+  │  ├─ packet
+  │  │  ├─ BasePacket.hpp             (abstraktná base trieda packetu)
+  │  │  ├─ RequestPacket.hpp          (deklarácia objektu RRQ/WRQ packetu)
+  │  │  ├─ DataPacket.hpp             (deklarácia objektu DATA packetu)
+  │  │  ├─ AcknowledgementPacket.hpp  (deklarácia objektu ACK packetu)
+  │  │  ├─ ErrorPacket.hpp            (deklarácia objektu ERROR packetu)
+  │  │  ├─ OptionAckPacket.hpp        (deklarácia objektu OACK packetu)
+  │  │  └─ PacketFactory.hpp          (továreň na vytváranie packetov)
+  │  ├─ server
+  │  │  ├─ connection.hpp             (deklarácia objektu serverového spojenia)
+  │  │  └─ server.hpp                 (deklarácia objektu servera)
+  │  ├─ util
+  │  │  ├─ connection.hpp             (deklarácia abstraktného objektu spojenia)
+  │  │  ├─ logger.hpp                 (jednotný logger – vypisovač logov)
+  │  │  └─ netascii.hpp               (konverzia medzi netascii a ascii)
+  ├─ src
+  │  ├─ client
+  │  │  ├─ client.cpp                 (implementácia objektu klienta)
+  │  │  └─ main.cpp                   (vstupný bod tftp-client programu)
+  │  ├─ packet
+  │  │  ├─ RequestPacket.cpp          (implementácia objektu RRQ/WRQ packetu)
+  │  │  ├─ DataPacket.cpp             (implementácia objektu DATA packetu)
+  │  │  ├─ AcknowledgementPacket.cpp  (implementácia objektu ACK packetu)
+  │  │  ├─ ErrorPacket.cpp            (implementácia objektu ERROR packetu)
+  │  │  ├─ OptionAckPacket.cpp        (implementácia objektu OACK packetu)
+  │  ├─ server
+  │  │  ├─ connection.cpp             (implementácia objektu serverového spojenia)
+  │  │  ├─ main.cpp                   (vstupný bod tftp-server programu)
+  │  │  └─ server.cpp                 (implementácia objektu servera)
+  │  ├─ util
+  │  │  └─ connection.cpp             (implementácia abstraktného objektu spojenia)
+  ├─ test
+  │   ├─ Catch2                       (priečinok pre Catch2 testovací framework)
+  │   ├─ RequestPacket.cpp            (unit testy RRQ/WRQ packetu)
+  │   ├─ DataPacket.cpp               (unit testy DATA packetu)
+  │   ├─ AcknowledgementPacket.cpp    (unit testy ACK packetu)
+  │   ├─ ErrorPacket.cpp              (unit testy ERROR packetu)
+  │   ├─ OptionAckPacket.cpp          (unit testy OACK packetu)
+  │   └─ PacketFactory.cpp            (unit testy továrne na vytváranie packetov)
+  ├ Makefile                          (Makefile pre `make` nástroj)
+  ├ manual.pdf                        (technická dokumentácia)
+  └ README                            (tento súbor)
+
+ZDROJE
+------
+
+  [1] SOLLINS, Karen. The TFTP Protocol (Revision 2). Online.
+    Cambridge: MIT, 1992. [vid. 2023-11-20]. Dostupné z:
+    https://datatracker.ietf.org/doc/html/rfc1350
+
+  [2] BRADEN, Robert. Requirements for Internet Hosts: Application and Support. Online.
+    Los Angeles: USC/Information Sciences Institute, 1989. [vid. 2023-11-20].
+    Dostupné z: https://datatracker.ietf.org/doc/html/rfc1123
+
+  [3] MALKIN, Gary a HARKIN, Art. TFTP Option Extension. Online.
+    The Internet Society, 1998. [vid. 2023-11-20]. Dostupné z:
+    https://datatracker.ietf.org/doc/html/rfc2347
+
+  [4] MALKIN, Gary a HARKIN, Art. TFTP Blocksize Option. Online.
+    The Internet Society, 1998. [vid. 2023-11-20]. Dostupné z:
+    https://datatracker.ietf.org/doc/html/rfc2348
