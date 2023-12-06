@@ -2,20 +2,12 @@
 
 *Projekt (TFTP klient a server) z predmetu Sieťové aplikácie a správa sietí (ISA), tretí semester bakalárskeho štúdia BIT na FIT VUT/BUT, ak.rok 2023/2024*
 
-🔒 **Aktívny súkromný repozitár — nezverejňovať!**
-<!-- 🗄️ **Súkromný archivovaný repozitár!** -->
-<!-- ⚠️ **Zverejnené pre archívne účely — nekopírujte, nula by Vás mrzela. Za nič také nenesiem žiadnu zodpovednosť!** Všetky odovzdané projekty prechádzajú kontrolou plagiátorstva, pri ktorej sa porovnávajú aj s dávnejšie odovzdanými riešeniami. -->
+⚠️ **Zverejnené pre archívne účely — nekopírujte, nula by Vás mrzela. Za nič také nenesiem žiadnu zodpovednosť!** Všetky odovzdané projekty prechádzajú kontrolou plagiátorstva, pri ktorej sa porovnávajú aj s dávnejšie odovzdanými riešeniami.
 <br />
 
-Hodnotenie: ?? / 20<br />（?）
+Hodnotenie: 17,5 / 20<br />（-1,5 zbúchané docs; -1 RFC 21349 testy, inak paráda! <img alt=":Koteseni:" src="https://cdn.discordapp.com/emojis/1097293982704341012.png" height="16px" />）
 
 Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/student.phtml?script_name=zadani_detail&apid=268266&zid=54264)
-
-### TODO-List ###
-
-- [X] ⏰ 2023-09-05 **Zadanie**
-- [X] ⏰ 2023-09-06 **Registrácia**
-- [ ] ⏰ 2023-11-20 **Deadline**
 
 ### Dodržané RFC ###
 
