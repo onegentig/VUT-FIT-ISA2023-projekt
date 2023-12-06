@@ -128,8 +128,8 @@ $(CATCH2_OBJ): $(CATCH2_SRC)
 $(CATCH2_SRC):
 	echo "  Catch2 framework not would. Downloading..."
 	mkdir -p $(CATCH2_DIR)
-	curl -L $(CATCH2_H_URL) -o $(CATCH2_SRC)
-	curl -L $(CATCH2_C_URL) -o $(CATCH2_HEADER)
+	curl -L $(CATCH2_H_URL) -o $(CATCH2_HEADER)
+	curl -L $(CATCH2_C_URL) -o $(CATCH2_SRC)
 
 ##### Other targets #####
 
