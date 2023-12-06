@@ -5,7 +5,7 @@
 ⚠️ **Zverejnené pre archívne účely — nekopírujte, nula by Vás mrzela. Za nič také nenesiem žiadnu zodpovednosť!** Všetky odovzdané projekty prechádzajú kontrolou plagiátorstva, pri ktorej sa porovnávajú aj s dávnejšie odovzdanými riešeniami.
 <br />
 
-Hodnotenie: 17,5 / 20<br />（-1,5 zbúchané docs; -1 RFC 21349 testy, inak paráda! <img alt=":Koteseni:" src="https://cdn.discordapp.com/emojis/1097293982704341012.png" height="16px" />）
+Hodnotenie: 17,5 / 20<br />（-1,5 zbúchané docs; -1 RFC 2349 testy, inak paráda <img alt=":Koteseni:" src="https://cdn.discordapp.com/emojis/1097293982704341012.png" height="16px" />）
 
 Zadanie: [ZADANI.md](ZADANI.md), originál [STUDIS](https://www.vut.cz/studis/student.phtml?script_name=zadani_detail&apid=268266&zid=54264)
 
